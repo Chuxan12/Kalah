@@ -1,0 +1,10 @@
+.hole {
+    width: 10vh;
+    height: 10vh;
+    background-color: #dcdcdc;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
