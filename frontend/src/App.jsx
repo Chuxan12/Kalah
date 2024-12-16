@@ -2,14 +2,20 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
 import MainPage from "./pages/MainPage/MainPage";
-import NotFound from "./pages/NotFound/NotFound";
+import NotFoundPage from "./pages/NotFoundPage/NotFoundPage";
+import RegistrationPage from "./pages/RegistrationPage/RegistrationPage";
+import LoginPage from "./pages/LoginPage/LoginPage";
+import ProfilePage from "./pages/ProfilePage/ProfilePage";
 
 const App = () => {
   return (
     <Routes>
       <Route path="/" element={<MainLayout />}>
         <Route index element={<MainPage />} />
-        <Route path="*" element={<NotFound />} />
+        <Route path="registration" element={<RegistrationPage />}/>
+        <Route path="login" element={<LoginPage/>}/>
+        <Route path="profile" element={<ProfilePage/>}/>
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );
