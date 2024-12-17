@@ -6,11 +6,16 @@ import styles from './ProfilePage.module.css';
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAvatar(reader.result); // Обновляем аватар
+        setAvatar(reader.result);
       };
-      reader.readAsDataURL(file); // Читаем файл как Data URL
+      reader.readAsDataURL(file);
     }
   };
+
+  const handleClickOnConfirmButton = () => {
+    alert("подтверждение изменений");
+    // добавить логику отправки
+  }
 
 
 const ProfilePage = ({ avatarUrl, name, email, wins, games }) => {
@@ -42,7 +47,6 @@ const ProfilePage = ({ avatarUrl, name, email, wins, games }) => {
           <p className={styles.profileEmail}>{email}</p>
         </div>
 
-        {/* Поля для изменения пароля */}
         <div className={styles.inputGroup}>
           <label className={styles.inputLabel}>Старый пароль</label>
           <input 
@@ -60,9 +64,7 @@ const ProfilePage = ({ avatarUrl, name, email, wins, games }) => {
             placeholder="Введите новый пароль" 
           />
         </div>
-
-        {/* Кнопка для подтверждения изменений */}
-        <button className={styles.saveButton}>Подтвердить изменения</button>
+        <button className={styles.saveButton} onClick={handleClickOnConfirmButton}>Подтвердить изменения</button>
       </div>
     </div>
       <div className={styles.statsCard}>
