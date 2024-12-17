@@ -1,0 +1,26 @@
+.container {
+    background-color: rgba(220, 220, 220, 0.9);
+    border: 1px solid #b0b0b0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 600px;
+    text-align: center;
+    margin: auto;
+    color: #333;
+}
+
+.content h1,
+.content h2 {
+    font-weight: normal;
+    margin-bottom: 10px;
+}
+
+.content p {
+    margin: 10px 0;
+    font-size: 16px;
+}
+
+.content strong {
+    font-weight: bold;
+}
