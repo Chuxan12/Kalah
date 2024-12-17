@@ -1,74 +1,81 @@
-import React, { useState } from "react";
-import "./ProfilePage.module.css";
+import React from 'react';
+import styles from './ProfilePage.module.css';
 
-const ProfilePage = () => {
-  const [user, setUser] = useState({
-    avatar: "https://via.placeholder.com/150",
-    username: "ИмяПользователя",
-    email: "mail@mail.ru",
-  });
-
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-
-  const handleAvatarChange = () => {
-    alert("Change avatar functionality not implemented yet.");
-  };
-
-  const handlePasswordChange = () => {
-    if (oldPassword && newPassword) {
-      alert("Password successfully changed!");
-      setOldPassword("");
-      setNewPassword("");
-    } else {
-      alert("Please fill out both password fields.");
+  const handleAvatarChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatar(reader.result); // Обновляем аватар
+      };
+      reader.readAsDataURL(file); // Читаем файл как Data URL
     }
   };
 
+
+const ProfilePage = ({ avatarUrl, name, email, wins, games }) => {
   return (
-    <div className="container rounded-box">
-      <div className="user-profile">
-        <div className="avatar-section">
-          <div className="avatar-wrapper">
-            <img
-              src={user.avatar}
-              alt="User Avatar"
-              className="avatar-img"
-            />
-          </div>
-          <button className="avatar-button" onClick={handleAvatarChange}>
-            Изменить фото профиля
-          </button>
+    <div className={styles.profileContainer}>
+      <div className={styles.profileCard}>
+      <div className={styles.avatarSection}>
+        <img src={avatarUrl} alt="" className={styles.profileAvatar} />
+        <label htmlFor="avatar-upload" className={styles.changeAvatarButton}>Изменить аватар</label>
+        <input 
+          id="avatar-upload"
+          type="file" 
+          accept="image/*" 
+          className={styles.fileInput} 
+          onChange={handleAvatarChange}
+        />
+      </div>
+
+      <div className={styles.profileInfo}>
+        <h3 className={styles.columnTitle}>Пользователь</h3>
+
+        <div className={styles.inputGroup}>
+          <label className={styles.inputLabel}>Имя</label>
+          <p className={styles.profileName}>{name}</p>
         </div>
 
-        <div className="profile-details">
-          <div className="input-box">
-            <span className="user-username">{user.username}</span>
-          </div>
-          <div className="input-box">
-            <span className="user-email"><strong>{user.email}</strong></span>
-          </div>
+        <div className={styles.inputGroup}>
+          <label className={styles.inputLabel}>Почта</label>
+          <p className={styles.profileEmail}>{email}</p>
+        </div>
 
-          <div className="input-box">
-            <input
-              type="password"
-              placeholder="Подтвердите старый пароль"
-              value={oldPassword}
-              onChange={(e) => setOldPassword(e.target.value)}
-            />
-          </div>
-          <div className="input-box">
-            <input
-              type="password"
-              placeholder="Введите новый пароль"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
-          </div>
+        {/* Поля для изменения пароля */}
+        <div className={styles.inputGroup}>
+          <label className={styles.inputLabel}>Старый пароль</label>
+          <input 
+            type="password" 
+            className={styles.inputField} 
+            placeholder="Введите старый пароль" 
+          />
+        </div>
 
-          <button className="confirm-button" onClick={handlePasswordChange}>
-            Подтвердить изменения
-          </button>
+        <div className={styles.inputGroup}>
+          <label className={styles.inputLabel}>Новый пароль</label>
+          <input 
+            type="password" 
+            className={styles.inputField} 
+            placeholder="Введите новый пароль" 
+          />
+        </div>
+
+        {/* Кнопка для подтверждения изменений */}
+        <button className={styles.saveButton}>Подтвердить изменения</button>
+      </div>
+    </div>
+      <div className={styles.statsCard}>
+        <h3 className={styles.statsTitle}>Статистика</h3>
+        <div className={styles.stats}>
+          <div className={styles.statItem}>
+            <span className={styles.statLabel}>Количество сыгранных игр</span>
+            <span className={styles.statValue}>{games}</span>
+          </div>
+          <div className={styles.statItem}>
+            <span className={styles.statLabel}>Количество побед</span>
+            <span className={styles.statValue}>{wins}</span>
+          </div>
         </div>
       </div>
     </div>

@@ -1,37 +1,211 @@
-/* UserProfile.css */
-.user-profile {
-    display: flex;
-    align-items: center;
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 16px;
-    max-width: 400px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  
-  .user-avatar {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-right: 16px;
-  }
-  
-  .user-details {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .user-name {
-    font-size: 1.5rem;
-    margin: 0;
-    color: #333;
-  }
-  
-  .user-email {
-    font-size: 1rem;
-    margin: 4px 0 0;
-    color: #555;
-  }
-  
+.profileContainer {
+  display: flex;
+  justify-content: space-between;
+  width: 90vw; 
+  max-width: 100%;
+}
+
+.profileCard {
+  display: flex;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 700px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+  color: #333;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+    position: relative;
+  left: 10%
+}
+
+.avatarSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 50%;
+  height: 100%;
+  text-align: center;
+}
+
+/* Подпись для колонки */
+.columnTitle {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.profileAvatar {
+  width: 80%;
+  height: 80%;
+  border-radius: 10%;
+  object-fit: cover;
+  border: 4px solid #fff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+}
+
+/* Имя пользователя под аватаром */
+.profileName {
+  font-size: 1rem;
+  font-weight: bold;
+  margin: 10px 0 5px 0;
+  color: #333;
+}
+
+/* Почта пользователя под аватаром */
+.profileEmail {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+/* Кнопка для изменения аватара */
+.changeAvatarButton {
+  background-color: #000000;
+  color: #fff;
+  font-size: 0.9rem;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.changeAvatarButton:hover {
+  background-color: #636363;
+}
+
+/* Информация о пользователе */
+.profileInfo {
+  width: 50%;
+  /* Колонка занимает 50% от всей карточки */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+/* Группа инпутов */
+.inputGroup {
+  margin-bottom: 15px;
+}
+
+/* Подписи для полей ввода */
+.inputLabel {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 5px;
+  display: block;
+}
+
+/* Инпуты для ввода паролей */
+.inputField {
+  width: 100%;
+  padding: 10px 15px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: #f9f9f9;
+  color: #333;
+  transition: border-color 0.3s;
+  font-weight: bold;
+}
+
+.inputField::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+  /* Полупрозрачный текст плейсхолдера */
+  font-size: 0.9rem;
+}
+
+.inputField:focus {
+  border-color: #434343;
+  outline: none;
+  background-color: #fff;
+}
+
+/* Кнопка для сохранения изменений */
+.saveButton {
+  background-color: #000000;
+  color: #fff;
+  font-size: 1rem;
+  padding: 15px 20px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.3s;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.saveButton:hover {
+  background-color: #383838;
+}
+
+
+
+.statsCard {
+  margin: 1vw;   
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  width: 40vw;
+  max-width: 400px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+  color: #333; 
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  right: 3%;
+}
+
+/* Блок со статистикой */
+.statsTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+/* Блок с элементами статистики */
+.stats {
+  display: flex;
+  flex-direction: column; /* Размещаем столбцом */
+  gap: 10px; /* Отступы между элементами */
+  width: 100%;
+}
+
+/* Элемент статистики */
+.statItem {
+  display: flex;
+  justify-content: space-between; /* Размещаем название и значение */
+  width: 100%; /* Элемент растягивается на всю ширину */
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+/* Название статистики (Победы, Количество игр) */
+.statLabel {
+  font-size: 1.2rem;
+  color: #555;
+}
+
+/* Значение статистики */
+.statValue {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.fileInput {
+  display: none;
+  /* Скрыть реальный инпут */
+}
