@@ -10,6 +10,7 @@ import SettingPage from "./pages/SettingPage/SettingPage";
 import { ThemeContext } from './context/ThemeContext';
 import AboutDevelopersPage from "./pages/AboutDevelopersPage/AboutDevelopersPage";
 import AboutGamePage from "./pages/AboutGamePage/AboutGamePage"
+import GameBoardPage from "./pages/GameBoardPage/GameBoardPage";
 
 const App = () => {
 
@@ -26,6 +27,7 @@ const App = () => {
         <Route path="game_setting" element={<SettingPage/>}/>
         <Route path="about-developers" element={<AboutDevelopersPage/>}/>
         <Route path="about-game" element={<AboutGamePage />} />
+        <Route path="game-board" element={<GameBoardPage/>} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

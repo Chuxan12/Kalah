@@ -1,0 +1,56 @@
+.board {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(217, 166, 121, 0.7);
+    padding: 20px;
+    border-radius: 20px;
+    width: auto; 
+    height: 45%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.holesContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center; 
+  gap: 10px;
+  width: 70%;
+  height: 70%;
+}
+
+.row {  
+  display: flex;
+  justify-content: space-around; 
+  gap: 10px;
+  width: 100%; 
+}
+
+.finishButton {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
+    font-size: 1.2rem;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.finishButton:hover {
+    background-color: #45a049;
+}
+
+.seedsCount {
+    font-size: 1.5rem;
+    color: black;
+    font-weight: bold;
+}

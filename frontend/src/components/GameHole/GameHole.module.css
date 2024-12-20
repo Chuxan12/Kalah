@@ -1,0 +1,43 @@
+.hole {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    background-color: #dcdcdc;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 1px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.hole:hover {
+    background-color: #b0b0b0;
+}
+
+.selectedHole {
+    border: 2px solid green;
+}
+
+.seedsContainer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    width: 80%;
+    height: 80%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.seedsCount {
+    top: 33%;
+    font-size: 1.2rem;
+    color: black;
+    font-weight: bold;
+    position: absolute;
+    bottom: 5px;
+}

@@ -1,9 +1,14 @@
 import React from 'react';
+import Seed from '../Seed/Seed';
 import styles from './Hole.module.css';
 
-const Hole = () => {
+const Hole = ({ seedsCount, onClick }) => {
   return (
-    <div className={styles.hole}></div>
+    <div className={styles.hole} onClick={onClick}>
+      {Array.from({ length: seedsCount }, (_, index) => (
+        <Seed key={index} />
+      ))}
+    </div>
   );
 };
 
