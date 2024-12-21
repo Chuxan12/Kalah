@@ -1,0 +1,17 @@
+.kalah {
+    min-width: 80px;
+    width: 5%;
+    height: 80%;
+    min-height: 200px;
+    margin: 1vh;
+    background-color: #dcdcdc;
+    border-radius: 6vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 1vh 0;
+    text-align: center;
+    position: relative;
+    transition: background-color 0.3s, transform 0.2s;
+}

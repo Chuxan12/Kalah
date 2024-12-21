@@ -1,0 +1,30 @@
+.board {
+    position: absolute;
+    top: 38%; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(217, 166, 121, 0.7); 
+    padding: 20px;
+    border-radius: 20px;
+    width: 75%; 
+    height: 60vh; 
+    min-width: 300px; 
+    max-width: 900px; 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); 
+  }
+  
+  .holesContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  

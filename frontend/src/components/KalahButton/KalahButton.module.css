@@ -1,0 +1,38 @@
+.button {
+    width: 15vh;
+    height: 40vh;
+    background-color: #dcdcdc;
+    border-radius: 6vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 1vh 0;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  .button:hover {
+    background-color: #c0c0c0; 
+  }
+  
+  .button:active {
+    transform: scale(0.95); 
+  }
+  
+  .topText {
+    font-size: 2vh;
+    font-weight: bold;
+    margin-top: 3vh;
+    color:black;
+  }
+
+  .centerText {
+    font-size: 1.8vh;
+    font-weight: 400;
+    color: #000;
+    margin-top: 0.5vh; 
+  }
+  

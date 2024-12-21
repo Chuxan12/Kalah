@@ -1,0 +1,21 @@
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  /* Указывает, что Header идет сверху, а main заполняет остальное */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+    font-family: 'Poppins', sans-serif;
+}
+
+main {
+  flex: 1;
+  /* Занимает оставшуюся высоту */
+  width: 100%;
+  /* Заполняет ширину */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
