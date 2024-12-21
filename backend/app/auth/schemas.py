@@ -41,11 +41,3 @@ class SUserAuth(EmailModel):
 
 class SUserInfo(UserBase):
     id: int = Field(description="Идентификатор пользователя")
-
-    @computed_field
-    def role_name(self) -> str:
-        return self.role.name
-
-    @computed_field
-    def role_id(self) -> int:
-        return self.role.id

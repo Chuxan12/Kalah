@@ -12,7 +12,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(
         String(100), unique=True)  # Уникальная почта
     # Аватар (может быть URL или путь к изображению)
-    avatar: Mapped[str] = mapped_column(Text)
+    avatar: Mapped[str] = mapped_column(Text, nullable=True)
     password: Mapped[str] = mapped_column(String(100))  # Пароль
     statistics: Mapped["UserStatistics"] = relationship(
         "UserStatistics", back_populates="user", uselist=False)
