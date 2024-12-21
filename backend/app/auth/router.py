@@ -66,8 +66,6 @@ async def update_user(
     # Обновляем поля пользователя в зависимости от переданных данных
     if user_data.first_name is not None:
         user.first_name = user_data.first_name
-    if user_data.email is not None:
-        user.email = user_data.email
     if user_data.avatar is not None:
         user.avatar = user_data.avatar
     if user_data.password:  # Если пароль передан, хешируем его
