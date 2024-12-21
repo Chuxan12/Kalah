@@ -2,6 +2,7 @@ import re
 from typing import Self
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator, computed_field
 from app.auth.utils import get_password_hash
+from typing import Optional
 
 
 class EmailModel(BaseModel):
@@ -41,3 +42,8 @@ class SUserAuth(EmailModel):
 
 class SUserInfo(UserBase):
     id: int = Field(description="Идентификатор пользователя")
+
+class SUserUpdate(BaseModel):
+    first_name: Optional[str] = Field(None, max_length=50, description="Имя пользователя. Оставьте пустым, если не хотите менять.")
+    avatar: Optional[str] = Field(None, description="URL или путь к изображению аватара. Оставьте пустым, если не хотите менять.")
+    password: Optional[str] = Field(None, min_length=5, max_length=50, description="Пароль, от 5 до 50 знаков. Оставьте пустым, если не хотите менять.")

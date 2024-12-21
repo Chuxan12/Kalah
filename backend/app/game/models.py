@@ -2,8 +2,7 @@ from sqlalchemy import ForeignKey, Integer, String, Text, UUID
 from sqlalchemy.orm import Mapped, relationship, mapped_column
 from sqlalchemy.ext.declarative import declarative_base
 from app.auth.models import User
-
-Base = declarative_base()
+from app.dao.database import Base, str_uniq
 
 
 class Game(Base):
@@ -13,17 +12,21 @@ class Game(Base):
     player1_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
     player2_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
     settings_id: Mapped[int] = mapped_column(ForeignKey('settings.id'))
-    settings: Mapped["Settings"] = relationship(
-        "Settings", back_populates="games")
-    holes: Mapped[list["Hole"]] = relationship("Hole", back_populates="game")
-    kalahas: Mapped[list["Kalaha"]] = relationship(
-        "Kalaha", back_populates="game")
 
-    players: Mapped[list[User]] = relationship(
-        "User", primaryjoin="or_(User.id==player1_id, User.id==player2_id)")
+    settings: Mapped["Settings"] = relationship("Settings", back_populates="games")
+    holes: Mapped[list["Hole"]] = relationship("Hole", back_populates="game")
+    kalahas: Mapped[list["Kalaha"]] = relationship("Kalaha", back_populates="game")
+
+    # Изменено: используем строковые ссылки для player1_id и player2_id
+    players: Mapped[list["User"]] = relationship(
+        "User",
+        primaryjoin="or_(User.id==Game.player1_id, User.id==Game.player2_id)",
+        backref="games"
+    )
 
     def __repr__(self):
         return f"{self.__class__.__name__}(id={self.id}, player1_id={self.player1_id}, player2_id={self.player2_id})"
+
 
 
 class Settings(Base):

@@ -5,8 +5,9 @@ from app.auth.models import User
 from app.exceptions import UserAlreadyExistsException, IncorrectEmailOrPasswordException
 from app.auth.auth import authenticate_user, create_access_token
 from app.auth.dao import UsersDAO
-from app.auth.schemas import SUserRegister, SUserAuth, EmailModel, SUserAddDB, SUserInfo
+from app.auth.schemas import SUserRegister, SUserAuth, EmailModel, SUserAddDB, SUserInfo, SUserUpdate
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.auth.utils import get_password_hash
 
 from app.dao.session_maker import TransactionSessionDep, SessionDep
 
@@ -47,5 +48,30 @@ async def get_me(user_data: User = Depends(get_current_user)) -> SUserInfo:
 
 @router.get("/all_users/")
 async def get_all_users(session: AsyncSession = SessionDep,
-                        user_data: User = Depends(get_current_admin_user)) -> List[SUserInfo]:
+                        user_data: User = Depends(get_current_user)) -> List[SUserInfo]:
     return await UsersDAO.find_all(session=session, filters=None)
+
+@router.put("/update")
+async def update_user(
+    user_data: SUserUpdate,
+    session: AsyncSession = TransactionSessionDep,
+    current_user: User = Depends(get_current_user)
+) -> dict:
+    # Получаем текущего пользователя из базы данных
+    user = await UsersDAO.find_one_or_none(session=session, filters=EmailModel(email=current_user.email))
+    
+    if not user:
+        raise IncorrectEmailOrPasswordException("Пользователь не найден")
+
+    # Обновляем поля пользователя в зависимости от переданных данных
+    if user_data.first_name is not None:
+        user.first_name = user_data.first_name
+    if user_data.avatar is not None:
+        user.avatar = user_data.avatar
+    if user_data.password:  # Если пароль передан, хешируем его
+        user.password = get_password_hash(user_data.password)
+
+    # Применяем изменения в базе данных
+    await UsersDAO.update(session=session, user=user)
+
+    return {'message': 'Данные пользователя успешно обновлены!'}
