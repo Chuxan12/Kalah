@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import CustomSlider from '../../components/CustomSlider/CustomSlider'; 
 import styles from './SettingPage.module.css'; 
+import axios from 'axios';
 
 const SettingPage = () => {
   const [searchParams] = useSearchParams();

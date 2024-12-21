@@ -15,11 +15,7 @@ const Header = ({ setCurrentTheme, isAuthenticated }) => {
   };
 
   const handleProfileClick = () => {
-    if (isAuthenticated) {
       navigate('/profile');
-    } else {
-      navigate('/login');
-    }
   };
 
   return (

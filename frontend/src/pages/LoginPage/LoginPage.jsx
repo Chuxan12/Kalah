@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import styles from "./LoginPage.module.css";
 import axios from "axios";
-
+import Cookies from "js-cookie";
 const LoginPage = () => {
   const [formData, setFormData] = useState({
     email: "",
@@ -21,22 +21,34 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");
-  try {
-    const response = await axios.post(
-      "api/auth/login",
-      {
-        email: formData.email,
-        password: formData.password,
-      },
-      { withCredentials: true }
-    );
 
-    navigate("/");
-  } catch (error) {
-    setErrorMessage(
-      error.response?.data?.message
-    );
-  }
+    try {
+      const response = await axios.post(
+        "api/auth/login",
+        {
+          email: formData.email,
+          password: formData.password,
+        },
+        { withCredentials: true } 
+      );
+
+      const { ok, access_token, message } = response.data;
+
+      if (ok) {
+        Cookies.set("access_token", access_token, {
+          expires: 7,
+          secure: true,
+          sameSite: "Strict",
+        });
+
+        alert(message || "Вы успешно вошли!");
+        navigate("/");
+      } else {
+        setErrorMessage(message || "Что-то пошло не так");
+      }
+    } catch (error) {
+      setErrorMessage(error.response?.data?.message || "Ошибка авторизации");
+    }
   };
 
   return (
@@ -49,7 +61,7 @@ const LoginPage = () => {
               type="text"
               id="email"
               name="email"
-              value={formData.username}
+              value={formData.email}
               onChange={handleChange}
               placeholder="Введите почту"
               required
