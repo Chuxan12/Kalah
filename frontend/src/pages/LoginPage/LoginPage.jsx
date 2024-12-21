@@ -7,6 +7,8 @@ const LoginPage = () => {
     password: ""
   });
 
+  const [errorMessage, setErrorMessage] = useState("");
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -15,10 +17,21 @@ const LoginPage = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // logic
-    console.log("login form submitted", formData);
+    setErrorMessage("");
+    try {
+      const response = await axios.post("api/sign_in", {
+        username: formData.username,
+        password: formData.password
+      });
+      console.log("login form submitted", formData);
+      navigate('/');
+    } catch(error){
+      setErrorMessage(
+        error.response?.data?.message || "Произошла ошибка при авторизации."
+      );
+    }
   };
 
   return (
@@ -49,6 +62,7 @@ const LoginPage = () => {
             />
           </div>
           <button type="submit" className={styles.submitButton}>Войти</button>
+          {errorMessage && <p className={styles.errorMessage}>{errorMessage}</p>}
           <p className={styles.registrationText}>
             Первый раз здесь? <a href="/registration" className={styles.loginLink}>Зарегистрируйтесь</a>
           </p>
