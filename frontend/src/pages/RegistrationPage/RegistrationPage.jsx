@@ -57,11 +57,12 @@ const handleSubmit = async (e) => {
 
   try {
     await axios.post(
-      "/api/registration",
+      "api/auth/register",
       {
-        username: formData.username,
+        first_name: formData.username,
         email: formData.email,
         password: formData.password,
+        confirm_password: formData.confirmPassword,
       },
       { withCredentials: true }
     );
@@ -69,7 +70,7 @@ const handleSubmit = async (e) => {
     navigate("/");
   } catch (error) {
     setErrorMessage(
-      error.response?.data?.message || "Произошла ошибка при регистрации."
+      error.response?.data?.message || "Произошла ошибка."
     );
   }
 };

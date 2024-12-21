@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import styles from "./LoginPage.module.css";
+import axios from "axios";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
-    username: "",
+    email: "",
     password: ""
   });
 
@@ -20,18 +21,22 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");
-    try {
-      const response = await axios.post("api/sign_in", {
-        username: formData.username,
-        password: formData.password
-      });
-      console.log("login form submitted", formData);
-      navigate('/');
-    } catch(error){
-      setErrorMessage(
-        error.response?.data?.message || "Произошла ошибка при авторизации."
-      );
-    }
+  try {
+    const response = await axios.post(
+      "api/auth/login",
+      {
+        email: formData.email,
+        password: formData.password,
+      },
+      { withCredentials: true }
+    );
+
+    navigate("/");
+  } catch (error) {
+    setErrorMessage(
+      error.response?.data?.message
+    );
+  }
   };
 
   return (
@@ -42,11 +47,11 @@ const LoginPage = () => {
           <div className={styles.formGroup}>
             <input
               type="text"
-              id="username"
-              name="username"
+              id="email"
+              name="email"
               value={formData.username}
               onChange={handleChange}
-              placeholder="Введите имя пользователя"
+              placeholder="Введите почту"
               required
             />
           </div>

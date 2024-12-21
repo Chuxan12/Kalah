@@ -10,13 +10,12 @@ from fastapi.staticfiles import StaticFiles
 app = FastAPI()
 active_connections: Dict[int, WebSocket] = {}
 
-# Добавляем middleware для CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Разрешаем все источники
-    allow_credentials=True,
-    allow_methods=["*"],  # Разрешаем все методы
-    allow_headers=["*"],  # Разрешаем все заголовки
+    allow_origins=["http://localhost:5173"],  # Разрешенные источники
+    allow_credentials=True,  # Разрешение на использование cookies/credentials
+    allow_methods=["*"],  # Разрешить все методы (GET, POST, PUT, DELETE и т.д.)
+    allow_headers=["*"],  # Разрешить все заголовки
 )
 
 app.mount('/static', StaticFiles(directory='app/static'), name='static')
