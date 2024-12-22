@@ -1,29 +1,89 @@
-import React from 'react';
-import styles from './ProfilePage.module.css';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import styles from "./ProfilePage.module.css";
+import axios from "axios";
 
+const ProfilePage = () => {
+  const [userData, setUserData] = useState({first_name : "", avatarUrl: "", email: "", games : null, wins : null});
+  const navigate = useNavigate();
+
+  // Проверка авторизации при загрузке страницы
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+
+        const response = await axios.get("api/auth/me/", {
+          withCredentials : true,
+        });
+        //console.log(response.data);
+        if(response.status == 200){
+        setUserData(response.data);
+      }
+      } catch (error) {
+        console.error("Ошибка при получении данных пользователя:", error.response?.data?.message || error.message);
+        navigate("/login"); // Перенаправляем на страницу логина, если пользователь не авторизован
+      }
+    };
+
+    fetchUserData();
+  }, [navigate]);
+
+  // Обработчик изменения аватара
   const handleAvatarChange = (event) => {
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAvatar(reader.result);
+        setUserData((prevData) => ({
+          ...prevData,
+          avatarUrl: reader.result,
+        }));
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleClickOnConfirmButton = () => {
-    alert("подтверждение изменений");
-    // добавить логику отправки
-  }
+  // Подтверждение изменения данных
+  const handleClickOnConfirmButton = async () => {
+    try {
+      const dataToSend = {
+        first_name: userData.first_name,
+        email: userData.email,
+        avatarUrl: userData.avatarUrl,
+        old_password: userData.old_password,
+        new_password: userData.new_password,
+      };
+ // доделать
+      const response = await axios.put("api/auth/update", dataToSend, {
+        withCredentials : true
+      });
 
+      alert("Изменения успешно сохранены!");
+    } catch (error) {
+      console.error("Ошибка при сохранении данных:", error.response?.data?.message || error.message);
+      alert("Не удалось сохранить изменения. Попробуйте позже.");
+    }
+  };
 
-const ProfilePage = ({ avatarUrl, name, email, wins, games }) => {
+    // хендл для выхода
+      const handleLogout = async () => {
+      try{
+          const response = await axios.post("api/auth/logout/", {withCredentials : true})
+          
+          navigate("/");
+      }
+      catch (error)
+      {
+        console.log(error);
+      }
+      navigate("/"); // Перенаправляем на главную страницу
+    };
+
   return (
     <div className={styles.profileContainer}>
       <div className={styles.profileCard}>
       <div className={styles.avatarSection}>
-        <img src={avatarUrl} alt="" className={styles.profileAvatar} />
+        <img src={userData.avatarUrl} alt="" className={styles.profileAvatar} />
         <label htmlFor="avatar-upload" className={styles.changeAvatarButton}>Изменить аватар</label>
         <input 
           id="avatar-upload"
@@ -32,6 +92,12 @@ const ProfilePage = ({ avatarUrl, name, email, wins, games }) => {
           className={styles.fileInput} 
           onChange={handleAvatarChange}
         />
+
+        <button
+          onClick={handleLogout}
+          className={styles.logoutButton}>
+          Выйти
+        </button>
       </div>
 
       <div className={styles.profileInfo}>
@@ -39,12 +105,12 @@ const ProfilePage = ({ avatarUrl, name, email, wins, games }) => {
 
         <div className={styles.inputGroup}>
           <label className={styles.inputLabel}>Имя</label>
-          <p className={styles.profileName}>{name}</p>
+          <p className={styles.profileName}>{userData.first_name}</p>
         </div>
 
         <div className={styles.inputGroup}>
           <label className={styles.inputLabel}>Почта</label>
-          <p className={styles.profileEmail}>{email}</p>
+          <p className={styles.profileEmail}>{userData.email}</p>
         </div>
 
         <div className={styles.inputGroup}>
@@ -72,11 +138,11 @@ const ProfilePage = ({ avatarUrl, name, email, wins, games }) => {
         <div className={styles.stats}>
           <div className={styles.statItem}>
             <span className={styles.statLabel}>Количество сыгранных игр</span>
-            <span className={styles.statValue}>{games}</span>
+            <span className={styles.statValue}>{userData.games}</span>
           </div>
           <div className={styles.statItem}>
             <span className={styles.statLabel}>Количество побед</span>
-            <span className={styles.statValue}>{wins}</span>
+            <span className={styles.statValue}>{userData.wins}</span>
           </div>
         </div>
       </div>

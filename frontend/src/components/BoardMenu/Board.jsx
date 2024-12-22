@@ -8,7 +8,7 @@ const BoardMenu = () => {
   const navigate = useNavigate();
 
   const handleNavigate = (flag) => {
-    navigate(`/game_setting?isOnline=${flag}`); // через query
+    navigate(`/game-setting?isOnline=${flag}`); // через query
   };
 
   return (

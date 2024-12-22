@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import CustomSlider from '../../components/CustomSlider/CustomSlider'; 
 import styles from './SettingPage.module.css'; 
+import axios from 'axios';
 
 const SettingPage = () => {
   const [searchParams] = useSearchParams();
@@ -16,6 +17,25 @@ const SettingPage = () => {
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [gameToken, setGameToken] = useState('');
+
+    // Проверка авторизации при загрузке страницы
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+
+        const response = await axios.get("api/auth/me/", {
+          withCredentials : true,
+        });
+
+      } catch (error) {
+        console.error("Ошибка при получении данных пользователя:", error.response?.data?.message || error.message);
+        navigate("/login"); // Перенаправляем на страницу логина, если пользователь не авторизован
+      }
+    };
+
+    fetchUserData();
+  }, [navigate]);
+
 
   const handleSliderChange = (name, value) => {
     setSliderValues((prev) => ({
