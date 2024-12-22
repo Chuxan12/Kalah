@@ -15,19 +15,6 @@ import axios from "axios";
 
 const App = () => {
   const [currentTheme, setCurrentTheme] = useState("desert");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    axios
-      .get("/auth/check", { // поставить валидный эндпоинт
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      })
-      .then(() => setIsAuthenticated(true))
-      .catch(() => setIsAuthenticated(false));
-  }, []);
-
   return (
     <ThemeContext.Provider value={{ currentTheme, setCurrentTheme }}>
       <Routes>
@@ -35,11 +22,8 @@ const App = () => {
           <Route index element={<MainPage />} />
           <Route path="registration" element={<RegistrationPage />} />
           <Route path="login" element={<LoginPage />} />
-          <Route
-            path="profile"
-            element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />}
-          />
-          <Route path="game_setting" element={<SettingPage />} />
+          <Route path="profile" element={<ProfilePage/>}/>
+          <Route path="game-setting" element={<SettingPage />} />
           <Route path="about-developers" element={<AboutDevelopersPage />} />
           <Route path="about-game" element={<AboutGamePage />} />
           <Route path="game-board" element={<GameBoardPage />} />

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./RegistrationPage.module.css";
 import axios from "axios";
@@ -15,6 +15,22 @@ const RegistrationPage = () => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const navigate = useNavigate();
+
+    useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await axios.get("api/auth/me/", {
+          withCredentials: true, 
+        });
+          navigate("/profile"); // Перенаправляем на профиль, если пользователь авторизован
+        
+      } catch (error) {
+        console.log("Пользователь не авторизован", error);
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
 
   const validateForm = () => {
     const newErrors = {};

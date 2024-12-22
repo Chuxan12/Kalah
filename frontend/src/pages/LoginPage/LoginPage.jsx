@@ -1,53 +1,65 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "./LoginPage.module.css";
 import axios from "axios";
-import Cookies from "js-cookie";
+
 const LoginPage = () => {
   const [formData, setFormData] = useState({
     email: "",
-    password: ""
+    password: "",
   });
 
+  const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Проверка авторизации при загрузке страницы
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await axios.get("api/auth/me/", {
+          withCredentials: true, 
+        });
+          navigate("/profile"); // Перенаправляем на профиль, если пользователь авторизован
+        
+      } catch (error) {
+        console.log("Пользователь не авторизован", error);
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
+
+  // Обработка изменения формы
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: value
+      [name]: value,
     });
   };
 
+  // Обработка отправки формы
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");
+    setIsLoading(true);
 
     try {
       const response = await axios.post(
-        "api/auth/login",
+        "api/auth/login/",
+        formData,
         {
-          email: formData.email,
-          password: formData.password,
-        },
-        { withCredentials: true } 
+          withCredentials: true, // Для отправки и получения cookies
+        }
       );
 
-      const { ok, access_token, message } = response.data;
-
-      if (ok) {
-        Cookies.set("access_token", access_token, {
-          expires: 7,
-          secure: true,
-          sameSite: "Strict",
-        });
-
-        alert(message || "Вы успешно вошли!");
-        navigate("/");
-      } else {
-        setErrorMessage(message || "Что-то пошло не так");
+      if (response.status === 200) {
+        navigate("/profile"); // Перенаправляем на профиль после успешной авторизации
       }
     } catch (error) {
-      setErrorMessage(error.response?.data?.message || "Ошибка авторизации");
+      console.error("Ошибка авторизации:", error);
+      setErrorMessage("Неправильная почта или пароль. Попробуйте снова");
     }
   };
 
@@ -78,10 +90,17 @@ const LoginPage = () => {
               required
             />
           </div>
-          <button type="submit" className={styles.submitButton}>Войти</button>
+          <button
+            type="submit"
+            className={styles.submitButton}>
+            Войти
+          </button>
           {errorMessage && <p className={styles.errorMessage}>{errorMessage}</p>}
           <p className={styles.registrationText}>
-            Первый раз здесь? <a href="/registration" className={styles.loginLink}>Зарегистрируйтесь</a>
+            Первый раз здесь?{" "}
+            <a href="/registration" className={styles.loginLink}>
+              Зарегистрируйтесь
+            </a>
           </p>
         </form>
       </div>

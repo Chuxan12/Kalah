@@ -1,39 +1,27 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"; // Для перенаправления
+import { useNavigate } from "react-router-dom";
 import styles from "./ProfilePage.module.css";
 import axios from "axios";
-import Cookies from "js-cookie"; // Для работы с куками
 
 const ProfilePage = () => {
-  const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(true); // Для состояния загрузки
-  const navigate = useNavigate(); // Для навигации
+  const [userData, setUserData] = useState({first_name : "", avatarUrl: "", email: "", games : null, wins : null});
+  const navigate = useNavigate();
 
   // Проверка авторизации при загрузке страницы
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // Извлекаем токен из куки
-        const accessToken = Cookies.get("access_token");
 
-        if (!accessToken) {
-          throw new Error("Токен отсутствует");
-        }
-
-        // Отправляем запрос с токеном в заголовке
-        const response = await axios.get("/api/auth/me", {
-          headers: {
-            Authorization: `Bearer ${accessToken}`, // Указываем токен в заголовке
-          },
+        const response = await axios.get("api/auth/me/", {
+          withCredentials : true,
         });
-
-        // Если запрос успешный, сохраняем данные пользователя
+        //console.log(response.data);
+        if(response.status == 200){
         setUserData(response.data);
-        setLoading(false);
+      }
       } catch (error) {
-        // Если ошибка, перенаправляем на страницу логина
-        console.error("Ошибка авторизации:", error.response?.data?.message || error.message);
-        navigate("/login");
+        console.error("Ошибка при получении данных пользователя:", error.response?.data?.message || error.message);
+        navigate("/login"); // Перенаправляем на страницу логина, если пользователь не авторизован
       }
     };
 
@@ -55,30 +43,20 @@ const ProfilePage = () => {
     }
   };
 
-  // Отправка POST-запроса
+  // Подтверждение изменения данных
   const handleClickOnConfirmButton = async () => {
     try {
-      const accessToken = Cookies.get("access_token");
-      if (!accessToken) {
-        throw new Error("Токен отсутствует");
-      }
-
       const dataToSend = {
-        name: userData.name,
+        first_name: userData.first_name,
         email: userData.email,
         avatarUrl: userData.avatarUrl,
-        // Добавьте другие данные для отправки
+        old_password: userData.old_password,
+        new_password: userData.new_password,
       };
-
-      const response = await axios.post(
-        "/api/profile/update",
-        dataToSend,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`, // Указываем токен в заголовке
-          },
-        }
-      );
+ // доделать
+      const response = await axios.put("api/auth/update", dataToSend, {
+        withCredentials : true
+      });
 
       alert("Изменения успешно сохранены!");
     } catch (error) {
@@ -87,69 +65,74 @@ const ProfilePage = () => {
     }
   };
 
-  if (loading) {
-    return <div>Загрузка...</div>;
-  }
+    // хендл для выхода
+      const handleLogout = async () => {
+      try{
+          const response = await axios.post("api/auth/logout/", {withCredentials : true})
+          
+          navigate("/");
+      }
+      catch (error)
+      {
+        console.log(error);
+      }
+      navigate("/"); // Перенаправляем на главную страницу
+    };
 
   return (
     <div className={styles.profileContainer}>
       <div className={styles.profileCard}>
-        <div className={styles.avatarSection}>
-          <img
-            src={userData.avatarUrl}
-            alt=""
-            className={styles.profileAvatar}
-          />
-          <label htmlFor="avatar-upload" className={styles.changeAvatarButton}>
-            Изменить аватар
-          </label>
-          <input
-            id="avatar-upload"
-            type="file"
-            accept="image/*"
-            className={styles.fileInput}
-            onChange={handleAvatarChange}
-          />
-        </div>
+      <div className={styles.avatarSection}>
+        <img src={userData.avatarUrl} alt="" className={styles.profileAvatar} />
+        <label htmlFor="avatar-upload" className={styles.changeAvatarButton}>Изменить аватар</label>
+        <input 
+          id="avatar-upload"
+          type="file" 
+          accept="image/*" 
+          className={styles.fileInput} 
+          onChange={handleAvatarChange}
+        />
 
-        <div className={styles.profileInfo}>
-          <h3 className={styles.columnTitle}>Пользователь</h3>
-
-          <div className={styles.inputGroup}>
-            <label className={styles.inputLabel}>Имя</label>
-            <p className={styles.profileName}>{userData.name}</p>
-          </div>
-
-          <div className={styles.inputGroup}>
-            <label className={styles.inputLabel}>Почта</label>
-            <p className={styles.profileEmail}>{userData.email}</p>
-          </div>
-
-          <div className={styles.inputGroup}>
-            <label className={styles.inputLabel}>Старый пароль</label>
-            <input
-              type="password"
-              className={styles.inputField}
-              placeholder="Введите старый пароль"
-            />
-          </div>
-
-          <div className={styles.inputGroup}>
-            <label className={styles.inputLabel}>Новый пароль</label>
-            <input
-              type="password"
-              className={styles.inputField}
-              placeholder="Введите новый пароль"
-            />
-          </div>
-          <button
-            className={styles.saveButton}
-            onClick={handleClickOnConfirmButton}
-          >
-            Подтвердить изменения
-          </button>
-        </div>
+        <button
+          onClick={handleLogout}
+          className={styles.logoutButton}>
+          Выйти
+        </button>
       </div>
+
+      <div className={styles.profileInfo}>
+        <h3 className={styles.columnTitle}>Пользователь</h3>
+
+        <div className={styles.inputGroup}>
+          <label className={styles.inputLabel}>Имя</label>
+          <p className={styles.profileName}>{userData.first_name}</p>
+        </div>
+
+        <div className={styles.inputGroup}>
+          <label className={styles.inputLabel}>Почта</label>
+          <p className={styles.profileEmail}>{userData.email}</p>
+        </div>
+
+        <div className={styles.inputGroup}>
+          <label className={styles.inputLabel}>Старый пароль</label>
+          <input 
+            type="password" 
+            className={styles.inputField} 
+            placeholder="Введите старый пароль" 
+          />
+        </div>
+
+        <div className={styles.inputGroup}>
+          <label className={styles.inputLabel}>Новый пароль</label>
+          <input 
+            type="password" 
+            className={styles.inputField} 
+            placeholder="Введите новый пароль" 
+          />
+        </div>
+        <button className={styles.saveButton} onClick={handleClickOnConfirmButton}>Подтвердить изменения</button>
+      </div>
+    </div>
       <div className={styles.statsCard}>
         <h3 className={styles.statsTitle}>Статистика</h3>
         <div className={styles.stats}>
