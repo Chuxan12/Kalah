@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
-from app.game.models import Game, Settings
+from app.game.models import Game, Settings, GameResponse
 from typing import Dict, List, Optional
+from uuid import UUID
 import uuid
 import asyncio
 import logging
@@ -18,8 +19,8 @@ active_connections: Dict[str, WebSocket] = {}
 token_to_game_id: Dict[str, str] = {}
 
 # Создание новой игры
-@router.post("/", response_model=Game)
-async def create_game(beans: int, holes: int, time_per_move: int, ai_difficulty: int, id: uuid):
+@router.post("/", response_model=GameResponse)
+async def create_game(beans: int, holes: int, time_per_move: int, ai_difficulty: int, id: UUID):
     # Создание новой настройки игры
     settings_id = len(settings_store) + 1  # Генерация нового ID для настроек
     new_settings = Settings(stones_count=beans, holes_count=holes, turn_time=time_per_move)
@@ -27,13 +28,13 @@ async def create_game(beans: int, holes: int, time_per_move: int, ai_difficulty:
 
     board = [beans] * (holes * 2)
 
-    game_id = id
+    game_id = str(id)  # Преобразуем UUID в строку
     new_game = Game(
         id=game_id,
-        player1=0,  # Задайте соответствующие значения для игроков
-        player2=0,
+        player1=str(0),  # Задайте соответствующие значения для игроков
+        player2=str(0),
         board=board,
-        current_turn=0
+        current_turn=str(0)
     )
     games_store[game_id] = new_game
 
@@ -44,7 +45,7 @@ async def create_game(beans: int, holes: int, time_per_move: int, ai_difficulty:
     token_to_game_id[token2] = game_id
 
     await notify_players(game_id, new_game)
-    return {"game": new_game, "tokens": {"player1": token1, "player2": token2}}
+    return GameResponse(game=new_game, tokens={"player1": token1, "player2": token2})
 
 # Уведомление игроков об обновлениях игры
 async def notify_players(game_id: str, game: Game):
