@@ -11,6 +11,12 @@ const ProfilePage = () => {
     games: null,
     wins: null,
   });
+
+  const [userInput, setUserInput] = useState({
+    old_password: "",
+    password: "",
+  });
+
   const navigate = useNavigate();
 
   // Проверка авторизации при загрузке страницы
@@ -20,10 +26,8 @@ const ProfilePage = () => {
         const response = await axios.get("api/auth/me/", {
           withCredentials: true,
         });
-        //console.log(response.data);
         if (response.status == 200) {
           setUserData(response.data);
-          // распарсить
         }
       } catch (error) {
         console.error(
@@ -52,24 +56,30 @@ const ProfilePage = () => {
     }
   };
 
+  // Обновление значений полей ввода
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setUserInput((prevInput) => ({
+      ...prevInput,
+      [name]: value,
+    }));
+  };
+
   // Подтверждение изменения данных
   const handleClickOnConfirmButton = async () => {
     try {
       const dataToSend = {
         first_name: userData.first_name,
         avatar: userData.avatar,
-        old_password: userData.old_password,
-        password: userData.new_password,
+        old_password: userInput.old_password,
+        password: userInput.password,
       };
       const response = await axios.put("api/auth/update", dataToSend, {
         withCredentials: true,
       });
 
-      // refresh page
-
       alert("Изменения успешно сохранены!");
     } catch (error) {
-      //error message
       console.error(
         "Ошибка при сохранении данных:",
         error.response?.data?.message || error.message
@@ -81,15 +91,13 @@ const ProfilePage = () => {
   // хендл для выхода
   const handleLogout = async () => {
     try {
-      const response = await axios.post("api/auth/logout/", {
+      await axios.post("api/auth/logout/", {
         withCredentials: true,
       });
-
       navigate("/");
     } catch (error) {
       console.log(error);
     }
-    navigate("/");
   };
 
   return (
@@ -130,8 +138,11 @@ const ProfilePage = () => {
             <label className={styles.inputLabel}>Старый пароль</label>
             <input
               type="password"
+              name="old_password"
               className={styles.inputField}
               placeholder="Введите старый пароль"
+              value={userInput.old_password}
+              onChange={handleInputChange}
             />
           </div>
 
@@ -139,8 +150,11 @@ const ProfilePage = () => {
             <label className={styles.inputLabel}>Новый пароль</label>
             <input
               type="password"
+              name="password"
               className={styles.inputField}
               placeholder="Введите новый пароль"
+              value={userInput.password}
+              onChange={handleInputChange}
             />
           </div>
           <button
