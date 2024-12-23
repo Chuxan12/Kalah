@@ -8,6 +8,9 @@ from app.auth.dao import UsersDAO
 from app.auth.schemas import SUserRegister, SUserAuth, EmailModel, SUserAddDB, SUserInfo, SUserUpdate, UserGetDTO
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.utils import get_password_hash
+from app.auth.utils import verify_password
+import logging
+from fastapi import HTTPException, status
 
 from app.dao.session_maker import TransactionSessionDep, SessionDep
 
@@ -15,13 +18,15 @@ router = APIRouter(prefix='/auth', tags=['Auth'])
 
 
 @router.post("/register/")
-async def register_user(user_data: SUserRegister, session: AsyncSession = TransactionSessionDep) -> dict:
+async def register_user(response: Response, user_data: SUserRegister, session: AsyncSession = TransactionSessionDep) -> dict:
     user = await UsersDAO.find_one_or_none(session=session, filters=EmailModel(email=user_data.email))
     if user:
         raise UserAlreadyExistsException
     user_data_dict = user_data.model_dump()
     del user_data_dict['confirm_password']
-    await UsersDAO.add(session=session, values=SUserAddDB(**user_data_dict))
+    new_user = await UsersDAO.add(session=session, values=SUserAddDB(**user_data_dict))
+    access_token = create_access_token({"sub": str(new_user.id)})
+    response.set_cookie(key="users_access_token", value=access_token, httponly=True)
     return {'message': f'Вы успешно зарегистрированы!'}
 
 
@@ -59,20 +64,27 @@ async def get_all_users(session: AsyncSession = SessionDep,
 async def update_user(
     user_data: SUserUpdate,
     session: AsyncSession = TransactionSessionDep,
-    current_user: User = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user) 
 ) -> dict:
     # Получаем текущего пользователя из базы данных
-    user = await UsersDAO.find_one_or_none(session=session, filters=EmailModel(email=current_user.email))
+    user = await UsersDAO.find_one_or_none(session=session, filters=EmailModel(email=current_user["email"]))
     
     if not user:
-        raise IncorrectEmailOrPasswordException("Пользователь не найден")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                                detail='Пользователь не найден')
+
+    # Проверяем совпадение старого пароля
+    if user_data.old_password is not None:
+        if not verify_password(plain_password=user_data.old_password, hashed_password=user.password):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                                  detail='Старый пароль не совпадает')
 
     # Обновляем поля пользователя в зависимости от переданных данных
     if user_data.first_name is not None:
         user.first_name = user_data.first_name
     if user_data.avatar is not None:
         user.avatar = user_data.avatar
-    if user_data.password:  # Если пароль передан, хешируем его
+    if user_data.password:  # Если новый пароль передан, хешируем его
         user.password = get_password_hash(user_data.password)
 
     # Применяем изменения в базе данных
