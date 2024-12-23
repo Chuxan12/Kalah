@@ -42,6 +42,8 @@ class SUserAuth(EmailModel):
 
 class SUserInfo(UserBase):
     id: int = Field(description="Идентификатор пользователя")
+    first_name: Optional[str] = Field(None, max_length=50, description="Имя пользователя. Оставьте пустым, если не хотите менять.")
+    avatar: Optional[str] = Field(None, description="URL или путь к изображению аватара. Оставьте пустым, если не хотите менять.")
 
 class SUserUpdate(BaseModel):
     first_name: Optional[str] = Field(None, max_length=50, description="Имя пользователя. Оставьте пустым, если не хотите менять.")
