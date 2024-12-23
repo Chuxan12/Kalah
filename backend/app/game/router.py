@@ -7,6 +7,7 @@ from app.auth.dependencies import get_current_user  # Предполагаем, 
 from uuid import uuid4
 from typing import Dict, List
 from app.dao.database import Base, str_uniq
+from app.dao.session_maker import TransactionSessionDep, SessionDep
 
 
 router = APIRouter(prefix="/games", tags=["Games"])
@@ -103,3 +104,22 @@ async def get_game_state(game_id: str):
 async def get_my_games(current_user: User = Depends(get_current_user)):
     user_games = [game for game in games_store.values() if game.player1_id == current_user.id or game.player2_id == current_user.id]
     return [{"game_id": game.id, "player1_id": game.player1_id, "player2_id": game.player2_id} for game in user_games]
+
+# # Эндпоинт для создания новых настроек
+# @router.post("/settings/", response_model=dict)
+# async def create_settings(
+#     stones_count: int,
+#     holes_count: int,
+#     turn_time: int,
+#     current_user: User = Depends(get_current_user),
+#     db: AsyncSession = Depends(SessionDep)  # Предполагаем, что у вас есть зависимость для получения базы данных
+# ):
+#     # Создаем новую настройку
+#     new_setting = Settings(stones_count=stones_count, holes_count=holes_count, turn_time=turn_time)
+
+#     # Добавляем настройку в базу данных
+#     db.add(new_setting)
+#     await db.commit()
+#     await db.refresh(new_setting)
+
+#     return {"id": new_setting.id, "stones_count": new_setting.stones_count, "holes_count": new_setting.holes_count, "turn_time": new_setting.turn_time}
