@@ -25,7 +25,6 @@ const GameBoard = () => {
       [1, 0],
     ]),
     selectedHole: null,
-    s,
   });
 
   const [showFinishButton, setShowFinishButton] = useState(false);
