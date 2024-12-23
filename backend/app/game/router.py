@@ -5,39 +5,46 @@ import uuid
 import asyncio
 import logging
 
-
 router = APIRouter(prefix="/games", tags=["Games"])
 
 # Временное хранилище в памяти
 games_store: Dict[str, Game] = {}
-settings_store: Dict[int, Settings] = {
-    1: Settings(stones_count=4, holes_count=6, turn_time=30)
-}
+settings_store: Dict[str, Settings] = {}
 
 # Активные WebSocket соединения
 active_connections: Dict[str, WebSocket] = {}
 
+# Хранилище для токенов и ID игр
+token_to_game_id: Dict[str, str] = {}
+
 # Создание новой игры
 @router.post("/", response_model=Game)
-async def create_game(player1: str, player2: str, settings_id: int = 1):
-    if settings_id not in settings_store:
-        raise HTTPException(status_code=404, detail="Settings not found")
+async def create_game(beans: int, holes: int, time_per_move: int, ai_difficulty: int, id: uuid):
+    # Создание новой настройки игры
+    settings_id = len(settings_store) + 1  # Генерация нового ID для настроек
+    new_settings = Settings(stones_count=beans, holes_count=holes, turn_time=time_per_move)
+    settings_store[str(id)] = new_settings
 
-    settings = settings_store[settings_id]
-    board = [settings.stones_count] * (settings.holes_count * 2)
+    board = [beans] * (holes * 2)
 
-    game_id = str(uuid.uuid4())
+    game_id = id
     new_game = Game(
         id=game_id,
-        player1=player1,
-        player2=player2,
+        player1=0,  # Задайте соответствующие значения для игроков
+        player2=0,
         board=board,
-        current_turn=player1
+        current_turn=0
     )
     games_store[game_id] = new_game
 
+    # Генерация токенов и сохранение соответствий
+    token1 = str(uuid.uuid4())
+    token2 = str(uuid.uuid4())
+    token_to_game_id[token1] = game_id
+    token_to_game_id[token2] = game_id
+
     await notify_players(game_id, new_game)
-    return new_game
+    return {"game": new_game, "tokens": {"player1": token1, "player2": token2}}
 
 # Уведомление игроков об обновлениях игры
 async def notify_players(game_id: str, game: Game):
@@ -47,18 +54,29 @@ async def notify_players(game_id: str, game: Game):
             await active_connections[player].send_json(message)
 
 # WebSocket для подключения игроков
-@router.websocket("/ws/{username}")
-async def websocket_endpoint(websocket: WebSocket, username: str):
+@router.websocket("/ws/{token}")
+async def websocket_endpoint(websocket: WebSocket, token: str):
     await websocket.accept()
-    active_connections[username] = websocket
-    logging.info(f"User {username} connected.")
+    
+    # Проверка, есть ли игра, связанная с токеном
+    game_id = await get_game_id_by_token(token)
+    if game_id is None:
+        await websocket.close()
+        raise HTTPException(status_code=403, detail="Invalid token")
+
+    active_connections[token] = websocket
+    logging.info(f"User {token} connected.")
 
     try:
         while True:
             await asyncio.sleep(1)
     except WebSocketDisconnect:
-        logging.info(f"User {username} disconnected.")
-        active_connections.pop(username, None)
+        logging.info(f"User {token} disconnected.")
+        active_connections.pop(token, None)
+
+# Получение ID игры по токену
+async def get_game_id_by_token(token: str) -> Optional[str]:
+    return token_to_game_id.get(token, None)
 
 # Сделать ход в игре
 @router.post("/{game_id}/move/")
