@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from app.game.models import Game, Settings, GameResponse
+from app.game.dto import CreateGameGTO
 from typing import Dict, List, Optional
 from uuid import UUID
 import uuid
@@ -20,13 +21,13 @@ token_to_game_id: Dict[str, str] = {}
 
 # Создание новой игры
 @router.post("/", response_model=GameResponse)
-async def create_game(beans: int, holes: int, time_per_move: int, ai_difficulty: int, id: UUID):
+async def create_game(data: CreateGameGTO):
     # Создание новой настройки игры
     settings_id = len(settings_store) + 1  # Генерация нового ID для настроек
-    new_settings = Settings(stones_count=beans, holes_count=holes, turn_time=time_per_move)
+    new_settings = Settings(stones_count=data.beans, holes_count=data.holes, turn_time=data.time_per_move)
     settings_store[str(id)] = new_settings
 
-    board = [beans] * (holes * 2)
+    board = [data.beans] * (data.holes * 2)
 
     game_id = str(id)  # Преобразуем UUID в строку
     new_game = Game(

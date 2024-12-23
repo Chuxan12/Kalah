@@ -15,7 +15,6 @@ class Settings(BaseModel):
     holes_count: int
     turn_time: int
 
-
 class GameResponse(BaseModel):
     game: Game
     tokens: Dict[str, str]

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, conint
 from typing import List, Optional
+from uuid import UUID
 
 
 class GameDTO(BaseModel):
@@ -28,3 +29,11 @@ class KalahaDTO(BaseModel):
     number: Optional[int]
     stones_count: Optional[int]
     game_id: Optional[int]
+
+
+class CreateGameGTO(BaseModel):
+    beans: Optional[int]
+    holes: Optional[int]
+    time_per_move: Optional[int]
+    ai_difficulty: Optional[int]
+    id: Optional[UUID]
