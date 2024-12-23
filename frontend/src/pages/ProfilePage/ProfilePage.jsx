@@ -18,6 +18,7 @@ const ProfilePage = () => {
         //console.log(response.data);
         if(response.status == 200){
         setUserData(response.data);
+        // распарсить 
       }
       } catch (error) {
         console.error("Ошибка при получении данных пользователя:", error.response?.data?.message || error.message);
@@ -49,17 +50,19 @@ const ProfilePage = () => {
       const dataToSend = {
         first_name: userData.first_name,
         email: userData.email,
-        avatarUrl: userData.avatarUrl,
+        avatarUrl: userData.avatar,
         old_password: userData.old_password,
         new_password: userData.new_password,
       };
- // доделать
       const response = await axios.put("api/auth/update", dataToSend, {
         withCredentials : true
       });
 
+      // refresh page
+
       alert("Изменения успешно сохранены!");
     } catch (error) {
+      //error message
       console.error("Ошибка при сохранении данных:", error.response?.data?.message || error.message);
       alert("Не удалось сохранить изменения. Попробуйте позже.");
     }
@@ -76,7 +79,7 @@ const ProfilePage = () => {
       {
         console.log(error);
       }
-      navigate("/"); // Перенаправляем на главную страницу
+      navigate("/");
     };
 
   return (
