@@ -46,27 +46,10 @@ const SettingPage = () => {
 
   const handleCreateGameButtonClick = async () => {
     try {
-      const response = await fetch('/api/game_setting', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          beans: sliderValues.beans,
-          holes: sliderValues.holes,
-          timePerMove: sliderValues.timePerMove,
-          aiDifficulty : isOnline ? 0 : sliderValues.aiDifficulty
-        }),
-      });
-      if (response.ok) {
-        const data = await response.json();
-        navigate(`/game-board?gameId=${data.gameId}`);
-      } else {
-        alert('Ошибка при создании игры.');
-      }
-    } catch (error) {
-      console.error('Ошибка:', error);
-      alert('Ошибка при подключении к серверу.');
+
+    }
+    catch (error){
+
     }
   };
 
