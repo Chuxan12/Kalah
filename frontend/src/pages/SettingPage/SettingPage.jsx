@@ -13,9 +13,8 @@ const SettingPage = () => {
   const [sliderValues, setSliderValues] = useState({
     beans: 3,
     holes: 6,
-    timePerMove: 5,
-    aiDifficulty: 1,
-    gameId: -1,
+    time_per_move: 5,
+    ai_difficulty: 0,
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [gameToken, setGameToken] = useState("");
@@ -48,11 +47,16 @@ const SettingPage = () => {
 
   const handleCreateGameButtonClick = async () => {
     try {
-      const gameId = uuidv4();
-      setSliderValues(gameId);
-      const response = await axios.post("api/games/", sliderValues);
-      if (response == 200) {
-        localStorage.setItem("gameId", gameId);
+      const id = uuidv4();
+      const gameData = { id, ...sliderValues }; // Добавляем id к sliderValues
+      console.log(gameData.beans);
+      console.log(gameData.holes);
+      console.log(gameData.ai_difficulty);
+      console.log(gameData.time_per_move);
+      console.log(gameData.id);
+      const response = await axios.post("api/games/", gameData);
+      if (response.status === 200) {
+        localStorage.setItem("id", id);
         navigate("/game-board");
       }
     } catch (error) {
@@ -66,7 +70,7 @@ const SettingPage = () => {
 
   const handleJoinGame = () => {
     if (gameToken.trim()) {
-      localStorage.setItem("gameId", gameToken.trim());
+      localStorage.setItem("id", gameToken.trim());
       setIsModalOpen(false);
       navigate("/game-board");
     } else {
@@ -97,8 +101,8 @@ const SettingPage = () => {
         max={180}
         step={1}
         label="Время на ход в секундах"
-        value={sliderValues.timePerMove}
-        onChange={(value) => handleSliderChange("timePerMove", value)}
+        value={sliderValues.time_per_move}
+        onChange={(value) => handleSliderChange("time_per_move", value)}
       />
       {!isOnline && (
         <CustomSlider
@@ -106,8 +110,8 @@ const SettingPage = () => {
           max={3}
           step={1}
           label="Сложность ИИ"
-          value={sliderValues.aiDifficulty}
-          onChange={(value) => handleSliderChange("aiDifficulty", value)}
+          value={1}
+          onChange={(value) => handleSliderChange("ai_difficulty", value)}
         />
       )}
 
