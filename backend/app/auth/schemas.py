@@ -44,10 +44,18 @@ class SUserInfo(UserBase):
     id: int = Field(description="Идентификатор пользователя")
     first_name: Optional[str] = Field(None, max_length=50, description="Имя пользователя. Оставьте пустым, если не хотите менять.")
     avatar: Optional[str] = Field(None, description="URL или путь к изображению аватара. Оставьте пустым, если не хотите менять.")
+    #wins: Optional[int] = Field(None, description="Кол-во побед.")
+    #games: Optional[int] = Field(None, description="Кол-во игр.")
+
+class UserGetDTO(UserBase):
+    id: int = Field(description="Идентификатор пользователя")
+    first_name: Optional[str] = Field(None, max_length=50, description="Имя пользователя. Оставьте пустым, если не хотите менять.")
+    avatar: Optional[str] = Field(None, description="URL или путь к изображению аватара. Оставьте пустым, если не хотите менять.")
     wins: Optional[int] = Field(None, description="Кол-во побед.")
     games: Optional[int] = Field(None, description="Кол-во игр.")
 
 class SUserUpdate(BaseModel):
     first_name: Optional[str] = Field(None, max_length=50, description="Имя пользователя. Оставьте пустым, если не хотите менять.")
     avatar: Optional[str] = Field(None, description="URL или путь к изображению аватара. Оставьте пустым, если не хотите менять.")
+    old_password: Optional[str] = Field(None, min_length=5, max_length=50, description="Пароль, от 5 до 50 знаков. Оставьте пустым, если не хотите менять.")
     password: Optional[str] = Field(None, min_length=5, max_length=50, description="Пароль, от 5 до 50 знаков. Оставьте пустым, если не хотите менять.")

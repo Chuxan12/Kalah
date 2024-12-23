@@ -1,11 +1,11 @@
 from typing import List
 from fastapi import APIRouter, Response, Depends
-from app.auth.dependencies import get_current_user, get_current_admin_user, get_current_user_with_stats
+from app.auth.dependencies import get_current_user, get_current_admin_user#, get_current_user_with_stats
 from app.auth.models import User
 from app.exceptions import UserAlreadyExistsException, IncorrectEmailOrPasswordException
 from app.auth.auth import authenticate_user, create_access_token
 from app.auth.dao import UsersDAO
-from app.auth.schemas import SUserRegister, SUserAuth, EmailModel, SUserAddDB, SUserInfo, SUserUpdate
+from app.auth.schemas import SUserRegister, SUserAuth, EmailModel, SUserAddDB, SUserInfo, SUserUpdate, UserGetDTO
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.utils import get_password_hash
 
@@ -42,8 +42,8 @@ async def logout_user(response: Response):
 
 
 @router.get("/me/")
-async def get_me(user_data: User = Depends(get_current_user_with_stats)) -> SUserInfo:
-    return SUserInfo.model_validate(user_data)
+async def get_me(user_data: User = Depends(get_current_user)) -> UserGetDTO:
+    return user_data
 
 
 @router.get("/all_users/")

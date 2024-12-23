@@ -1,13 +1,14 @@
 from fastapi import Request, HTTPException, status, Depends
+from sqlalchemy.future import select
 from jose import jwt, JWTError
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.exceptions import TokenExpiredException, NoJwtException, NoUserIdException, ForbiddenException, TokenNoFound
 from app.auth.dao import UsersDAO
-from app.auth.models import User
+from app.auth.models import User, UserStatistics
 from app.dao.session_maker import SessionDep
-from app.auth.schemas import SUserRegister, SUserAuth, EmailModel, SUserAddDB, SUserInfo, SUserUpdate
+import logging
 
 
 def get_token(request: Request):
@@ -19,7 +20,8 @@ def get_token(request: Request):
 
 async def get_current_user(token: str = Depends(get_token), session: AsyncSession = SessionDep):
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=settings.ALGORITHM)
+        payload = jwt.decode(token, settings.SECRET_KEY,
+                             algorithms=settings.ALGORITHM)
     except JWTError:
         raise NoJwtException
 
@@ -34,44 +36,21 @@ async def get_current_user(token: str = Depends(get_token), session: AsyncSessio
 
     user = await UsersDAO.find_one_or_none_by_id(data_id=int(user_id), session=session)
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='User not found')
-    return user
-
-
-async def get_current_user_with_stats(
-    token: str = Depends(get_token),
-    session: AsyncSession = SessionDep
-) -> SUserInfo:
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=settings.ALGORITHM)
-    except JWTError:
-        raise NoJwtException
-
-    expire: str = payload.get('exp')
-    expire_time = datetime.fromtimestamp(int(expire), tz=timezone.utc)
-    if (not expire) or (expire_time < datetime.now(timezone.utc)):
-        raise TokenExpiredException
-
-    user_id: str = payload.get('sub')
-    if not user_id:
-        raise NoUserIdException
-
-    # Извлекаем пользователя вместе со статистикой
-    user = await UsersDAO.find_one_or_none_by_id(data_id=int(user_id), session=session)
-    
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='User not found')
-    
-    # Возвращаем пользователя вместе со статистикой
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail='User not found')
+    query = select(UserStatistics).where(UserStatistics.user_id == user.id)
+    result = await session.execute(query)
+    result = result.scalar_one_or_none()
+    logging.debug(result)
     user_info = {
         "id": user.id,
         "first_name": user.first_name,
         "email": user.email,
         "avatar": user.avatar,
-        "wins": user.statistics.wins if user.statistics else 0,  # Если статистика не существует, возвращаем 0
-        "games_played": user.statistics.games_played if user.statistics else 0  # Если статистика не существует, возвращаем 0
+        "wins": result.wins if result else 0,
+        "games": result.games_played if result else 0
     }
-    
+    logging.debug(user_info)
     return user_info
 
 
