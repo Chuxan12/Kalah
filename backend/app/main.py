@@ -34,27 +34,5 @@ import logging
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 
-# Функция для отправки сообщения пользователю, если он подключен
-async def notify_user(user_id: int, message: dict):
-    """Отправить сообщение пользователю, если он подключен."""
-    if user_id in active_connections:
-        websocket = active_connections[user_id]
-        # Отправляем сообщение в формате JSON
-        await websocket.send_json(message)
-
-
-@app.websocket("/ws/{user_id}")
-async def websocket_endpoint(websocket: WebSocket, user_id: int):
-    await websocket.accept()
-    logging.info(f"User {user_id} connected.")
-    active_connections[user_id] = websocket
-    try:
-        while True:
-            await asyncio.sleep(1)
-    except WebSocketDisconnect:
-        logging.info(f"User {user_id} disconnected.")
-        active_connections.pop(user_id, None)
-
-
 app.include_router(router_auth)
 app.include_router(router_game)
