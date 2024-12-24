@@ -48,12 +48,8 @@ const SettingPage = () => {
   const handleCreateGameButtonClick = async () => {
     try {
       const id = uuidv4();
-      const gameData = { id, ...sliderValues }; // Добавляем id к sliderValues
-      console.log(gameData.beans);
-      console.log(gameData.holes);
-      console.log(gameData.ai_difficulty);
-      console.log(gameData.time_per_move);
-      console.log(gameData.id);
+      const token = id;
+      const gameData = { id, ...sliderValues, token }; // Добавляем id к sliderValues
       const response = await axios.post("api/games/", gameData);
       if (response.status === 200) {
         localStorage.setItem("id", id);
