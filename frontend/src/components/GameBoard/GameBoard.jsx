@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import Kalah from "../Kalah/Kalah";
 import Hole from "../GameHole/GameHole";
 import styles from "./GameBoard.module.css";
@@ -8,52 +9,100 @@ const GameBoard = () => {
     holes: new Map([]),
     kalahs: new Map([]),
     selectedHole: null,
+    idTurn: null,
+  });
+
+  const [token, setToken] = useState({
+    token: "",
   });
 
   const [showFinishButton, setShowFinishButton] = useState(false);
   const [webSocket, setWebSocket] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("id");
-    if (!token) {
-      console.error("Token not found in localStorage");
-      return;
-    }
+    const fetchPlayerIdAndSetPlayers = async () => {
+      try {
+        const temp = localStorage.getItem("id");
+        setToken(temp);
 
-    const ws = new WebSocket(`ws://localhost:8000/games/ws/${token}`);
+        if (!token) {
+          console.error("Token not found in localStorage");
+          return;
+        }
+        const ws = new WebSocket(`ws://localhost:8000/games/ws/${temp}`);
 
-    ws.onopen = () => {
-      console.log("WebSocket connected");
-    };
+        ws.onopen = async () => {
+          // Запрос на получение ID пользователя
+          const authResponse = await axios.get("/api/auth/me/", {
+            withCredentials: true,
+          });
+          const idPlayer = authResponse.data.id;
+          //console.log(token);
+          const setPlayersResponse = await axios.post(
+            "/api/games/set_players/",
+            {
+              game_id: temp,
+              id1: idPlayer,
+              id2: -1,
+            }
+          );
+          console.log("WebSocket connected");
+        };
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log("Message from server:", data);
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log("Message received:", data);
 
-      if (data.type === "game_update") {
-        const { holes, kalahs } = data.game;
-        console.log("get message");
-        setBoardState({
-          holes: new Map(holes.entries()),
-          kalahs: new Map(kalahs.entries()),
-          selectedHole: null,
-        });
+            if (data.type === "game_update") {
+              const { board } = data.game;
+              console.log("Updating board state with board:", board);
+
+              // Преобразование board
+              const { current_turn } = data.game;
+              const kalah1 = board[0]; // Количество зерен в первом калахе
+              const kalah2 = board[board.length - 1]; // Количество зерен во втором калахе
+              const holes = new Map(
+                board.slice(1, -1).map((seeds, index) => [index, seeds]) // Создание Map для лунок
+              );
+
+              console.log("Holes:", holes);
+              console.log("Kalahs:", { kalah1, kalah2 });
+
+              setBoardState({
+                holes,
+                kalahs: new Map([
+                  [0, kalah1],
+                  [1, kalah2],
+                ]),
+                selectedHole: null,
+                idTurn: current_turn,
+              });
+            }
+          } catch (error) {
+            console.error("Error processing message:", error);
+          }
+        };
+
+        ws.onerror = (error) => {
+          console.error("WebSocket error:", error);
+        };
+
+        ws.onclose = () => {
+          console.log("WebSocket closed");
+        };
+
+        setWebSocket(ws);
+
+        return () => {
+          ws.close();
+        };
+      } catch (error) {
+        console.error("Error during setup:", error);
       }
     };
 
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-
-    ws.onclose = () => {
-      console.log("WebSocket closed");
-    };
-
-    setWebSocket(ws);
-
-    return () => {
-      ws.close();
-    };
+    fetchPlayerIdAndSetPlayers();
   }, []);
 
   const handleHoleClick = (index) => {
@@ -68,20 +117,25 @@ const GameBoard = () => {
     setShowFinishButton(true);
   };
 
-  const handleFinishTurn = () => {
-    if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-      webSocket.send(
-        JSON.stringify({
-          action: "move",
-          payload: {
-            selectedHole: boardState.selectedHole,
-          },
-        })
+  const handleFinishTurn = async () => {
+    try {
+      const authResponse = await axios.get("/api/auth/me/", {
+        withCredentials: true,
+      });
+      const idPlayer = authResponse.data.id.toString();
+      const tok = localStorage.getItem("id");
+      console.log(tok);
+      const response = await axios.post(
+        `api/games/${tok}/move`,
+        {
+          game_id: tok,
+          pit_index: boardState.selectedHole,
+          player: idPlayer,
+        },
+        { withCredentials: true }
       );
-      setShowFinishButton(false);
-    } else {
-      console.error("WebSocket is not open");
-    }
+      console.log("отправлен индекс");
+    } catch (error) {}
   };
 
   return (
