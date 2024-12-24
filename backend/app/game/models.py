@@ -9,6 +9,7 @@ class Game(BaseModel):
     board: List[int]
     current_turn: str
     winner: Optional[str] = None
+    token: Optional[str] = None
 
 class Settings(BaseModel):
     stones_count: int

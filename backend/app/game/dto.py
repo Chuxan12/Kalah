@@ -37,3 +37,4 @@ class CreateGameGTO(BaseModel):
     time_per_move: Optional[int]
     ai_difficulty: Optional[int]
     id: Optional[UUID]
+    token: Optional[str]
