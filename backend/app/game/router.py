@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from app.game.models import Game, Settings, GameResponse
-from app.game.dto import CreateGameGTO
+from app.game.dto import CreateGameGTO, SetPlayersDTO
 from typing import Dict, List, Optional
 from uuid import UUID
 import uuid
@@ -21,11 +21,17 @@ active_player_connections: Dict[str, WebSocket] = {}
 token_to_game_id: Dict[str, str] = {}
 
 # Создание новой игры
-@router.post("set_players", response_model=GameResponse)
-async def set_players(id1: int, id2: int, game_id: str):
-    temp=games_store[game_id]
-    temp.player1=str(id1),
-    temp.player2=str(id2)
+@router.post("/set_players", response_model=GameResponse)
+async def set_players(data: SetPlayersDTO):
+    temp=games_store[data.game_id]
+    if temp.player1=="-1":
+        temp.player1=str(data.id1)
+        temp.current_turn=str(data.id1)
+        logging.info(f"Первый: {temp}")
+    else:
+        temp.player2=str(data.id1)
+        logging.info(f"Второй: {temp}")
+        await notify_players(str(temp.id), temp)
     return GameResponse(game=temp, tokens={"player1": str(temp.player1), "player2": str(temp.player2)})
 
 @router.post("/", response_model=GameResponse)
@@ -40,8 +46,8 @@ async def create_game(data: CreateGameGTO):
 
     new_game = Game(
         id=str(data.id),
-        player1=str(0),  # Задайте соответствующие значения для игроков
-        player2=str(0),
+        player1=str(-1),  # Задайте соответствующие значения для игроков
+        player2=str(-1),
         board=board,
         current_turn=str(0),
         token=data.token
@@ -61,10 +67,11 @@ async def create_game(data: CreateGameGTO):
 
 
 async def notify_players(game_id: str, game: Game):
-    logging.info(f"Э бля")
+    logging.info(f"Э")
     message = {"type": "game_update", "game": game.dict()}
     for player in [game.token]:
         logging.info(f"Зашли в notify")
+        logging.info(player)
         if player in active_connections:
             logging.info(f"Активное соединение: {active_connections[player]}")
             await active_connections[player].send_json(message)
@@ -75,12 +82,6 @@ async def notify_players(game_id: str, game: Game):
 @router.websocket("/ws/{token}")
 async def websocket_endpoint(websocket: WebSocket, token: str):
     await websocket.accept()
-
-    # Проверка, есть ли игра, связанная с токеном
-    game_id = await get_game_id_by_token(token)
-    if game_id is None:
-        await websocket.close()
-        raise HTTPException(status_code=403, detail="Invalid token")
 
     active_connections[token] = websocket
     logging.info(f"User {token} connected.")
@@ -127,6 +128,18 @@ async def make_move(game_id: str, player: str, pit_index: int):
 
     # Смена текущего игрока
     game.current_turn = game.player2 if game.current_turn == game.player1 else game.player1
+
+    # Проверка условия победы
+    player1_stones = sum(game.board[:len(game.board)//2])  # Предположим, что первые половина - это игрок 1
+    player2_stones = sum(game.board[len(game.board)//2:])  # Вторая половина - это игрок 2
+
+    if player1_stones == 0 or player2_stones == 0:
+        winner = game.player1 if player1_stones > player2_stones else game.player2
+        return {
+            "message": "Game over",
+            "winner": winner,
+            "game": game
+        }
 
     await notify_players(game_id, game)
     return {"message": "Move made", "game": game}

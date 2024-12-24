@@ -38,3 +38,9 @@ class CreateGameGTO(BaseModel):
     ai_difficulty: Optional[int]
     id: Optional[UUID]
     token: Optional[str]
+
+
+class SetPlayersDTO(BaseModel):
+    id1: int
+    id2: int
+    game_id: str

@@ -49,12 +49,10 @@ const SettingPage = () => {
     try {
       const id = uuidv4();
       const token = id;
+      localStorage.setItem("id", id);
       const gameData = { id, ...sliderValues, token }; // Добавляем id к sliderValues
       const response = await axios.post("api/games/", gameData);
-      if (response.status === 200) {
-        localStorage.setItem("id", id);
-        navigate("/game-board");
-      }
+      navigate("/game-board");
     } catch (error) {
       alert("Создание игры невозможно!");
     }
@@ -64,7 +62,7 @@ const SettingPage = () => {
     setIsModalOpen(true);
   };
 
-  const handleJoinGame = () => {
+  const handleJoinGame = async () => {
     if (gameToken.trim()) {
       localStorage.setItem("id", gameToken.trim());
       setIsModalOpen(false);
