@@ -37,7 +37,6 @@ async def set_players(data: SetPlayersDTO):
     return GameResponse(game=temp, tokens={"player1": str(temp.player1), "player2": str(temp.player2)})
 
 
-
 @router.post("/", response_model=GameResponse)
 async def create_game(data: CreateGameGTO):
     # Создание новой настройки игры
@@ -45,7 +44,10 @@ async def create_game(data: CreateGameGTO):
     new_settings = Settings(stones_count=data.beans,
                             holes_count=data.holes, turn_time=data.time_per_move)
     settings_store[str(id)] = new_settings
-
+    if (data.holes > 14 or data.holes < 6):
+        raise HTTPException(status_code=400, detail="Invalid holes")
+    if (data.beans < 3 or data.beans > 10):
+        raise HTTPException(status_code=400, detail="Invalid beans")
     board = [data.beans] * (data.holes)
     board.insert(0, 0)
     board.insert(len(board), 0)
@@ -108,88 +110,144 @@ async def get_game_id_by_token(token: str) -> Optional[str]:
 
 
 # Выполнение хода
-@router.post("/move/{game_id}/{pit_index}")
-def make_move(game_id: str, pit_index: int):
+@router.post("/move/{game_id}/{pit_index}", response_model=Game)
+def make_move_and_check_winner(game_id: str, pit_index: int):
     game = games_store.get(game_id)
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
 
     if game.current_turn not in [game.player1, game.player2]:
         raise HTTPException(status_code=400, detail="Invalid player")
+    if game.current_turn == game.player1 and pit_index >= len(game.board)//2:
+        raise HTTPException(status_code=400, detail="Invalid index")
+    if game.current_turn == game.player2 and pit_index < len(game.board)//2:
+        raise HTTPException(status_code=400, detail="Invalid index")
 
     # Проверка на допустимость хода
-    num_pits = len(game.board) - 2  # Количество лунок (первый и последний элементы - калахи)
+    # Количество лунок (первый и последний элементы - калахи)
+    num_pits = len(game.board) - 2
     if pit_index < 1 or pit_index > num_pits or game.board[pit_index] == 0:
         raise HTTPException(status_code=400, detail="Invalid move")
 
-    stones = game.board[pit_index]
-    game.board[pit_index] = 0  # Убираем камни из выбранной лунки
+    logging.info(f"Игра1:{game}")
+    temp = []
+    for i in range(0, len(game.board)//2):
+        temp.append(game.board[i])
+    for i in range(len(game.board) - 2, len(game.board)//2 - 1, -1):
+        temp.append(game.board[i])
+    temp.append(game.board[len(game.board) - 1])
+    logging.info(f"Игра11:{temp}")
+    stones = temp[pit_index]
+    temp[pit_index] = 0  # Убираем камни из выбранной лунки
     index = pit_index
-
     # Распределение камней
-    while stones > 0:
-        index += 1
-        if index == len(game.board):  # Пропускаем калах второго игрока
+    if (game.current_turn == game.player1):
+        while stones > 0:
             index += 1
-        if index >= len(game.board):  # Зацикливаем на начало
-            index = 0
-        game.board[index] += 1
-        stones -= 1
-
-    # Проверка результата последнего камня
-    if index == 0:  # Если последний камень попал в калах первого игрока
-        pass  # Игрок ходит снова
-    elif index == len(game.board) - 1:  # Если последний камень попал в калах второго игрока
-        pass  # Ничего не делаем, ход переходит к другому игроку
-    elif game.board[index] == 1:  # Если последний камень попал в пустую лунку
-        opposite_index = (num_pits + 1) - index  # Находим противоположную лунку
-        if game.board[opposite_index] > 0:  # Проверяем, что в противоположной лунке есть камни
-            if game.current_turn == game.player1:
-                game.board[0] += 1 + game.board[opposite_index]  # Переносим в калах первого игрока
-                game.board[opposite_index] = 0  # Очищаем противоположную лунку
+            if index == len(game.board) - 1:  # Пропускаем калах второго игрока
+                index += 1
+            if index >= len(game.board):  # Зацикливаем на начало
+                index = 0
+            if (stones == 1):
+                if (index != 0):
+                    if (index < len(game.board)//2):
+                        if (temp[index] == 0):
+                            temp[0] += temp[len(game.board) - 1 - index] + 1
+                            temp[len(game.board) - 1 - index] = 0
+                            stones -= 1
+                        else:
+                            temp[index] += 1
+                            stones -= 1
+                    else:
+                        temp[index] += 1
+                        stones -= 1
+                else:
+                    temp[index] += 1
+                    stones -= 1
             else:
-                game.board[-1] += 1 + game.board[opposite_index]  # Переносим в калах второго игрока
-                game.board[opposite_index] = 0  # Очищаем противоположную лунку
+                temp[index] += 1
+                stones -= 1
+    if (game.current_turn == game.player2):
+        while stones > 0:
+            index += 1
+            if index == 0:  # Пропускаем калах первого игрока
+                index += 1
+            if index >= len(game.board):  # Зацикливаем на начало
+                index = 1
+            if (stones == 1):
+                if (index != len(game.board) - 1):
+                    if (index >= len(game.board)//2):
+                        if (temp[index] == 0):
+                            temp[len(game.board) -
+                                 1] += temp[len(game.board) - 1 - index] + 1
+                            temp[len(game.board) - 1 - index] = 0
+                            stones -= 1
+                        else:
+                            temp[index] += 1
+                            stones -= 1
+                    else:
+                        temp[index] += 1
+                        stones -= 1
+                else:
+                    temp[index] += 1
+                    stones -= 1
+            else:
+                temp[index] += 1
+                stones -= 1
 
-    # Смена текущего игрока
-    game.current_turn = game.player2 if game.current_turn == game.player1 else game.player1
+    logging.info(f"Игра2:{temp}")
+    game.board[0] = temp[0]
+    game.board[len(game.board)-1] = temp[len(game.board)-1]
+    for i in range(1, len(game.board)//2):
+        game.board[i] = temp[i]
+    cnt = 0
+    for i in range(len(game.board)//2, len(game.board)-1):
+        game.board[i] = temp[len(game.board)-2 - cnt]
+        cnt += 1
+    if (game.current_turn == game.player1) and (index == 0):
+        game.current_turn = game.player1
+    elif (game.current_turn == game.player2) and (index == len(game.board)-1):
+        game.current_turn = game.player2
+    else:
+        game.current_turn = game.player2 if game.current_turn == game.player1 else game.player1
 
+    total_stones = 0
+    for i in range(len(game.board)):
+        total_stones += game.board[i]
+    logging.info(f"Всего камней:{total_stones}")
+    if (game.board[0] > total_stones/2):
+        game.winner = game.player1
+        logging.info(f"Игра3")
+        return game
+    if (game.board[len(game.board)-1] > total_stones/2):
+        game.winner = game.player2
+        logging.info(f"Игра4")
+        return game
+    flag1 = True
+    for i in range(1, len(game.board)//2):
+        if (temp[i] != 0):
+            flag1 = False
+    if (flag1):
+        for i in range(1, len(game.board)//2):
+            temp[0] += temp[i]
+    flag2 = True
+    for i in range(len(game.board)//2, len(game.board)-1):
+        if (temp[i] != 0):
+            flag2 = False
+    if (flag2):
+        for i in range(1, len(game.board)//2):
+            temp[len(game.board)-1] += temp[i]
+    if (flag1 or flag2):
+        if (game.board[0] > game.board[len(game.board)-1]):
+            logging.info(f"Игра5")
+            game.winner = game.player1
+        elif (game.board[0] < game.board[len(game.board)-1]):
+            logging.info(f"Игра6")
+            game.winner = game.player2
+        else:
+            logging.info(f"Игра7")
+            game.winner = "draw"
     return game
-
-# Проверка условий окончания игры
-@router.get("/check_winner/{game_id}")
-def check_winner(game_id: str):
-    game = games_store.get(game_id)
-    if not game:
-        raise HTTPException(status_code=404, detail="Game not found")
-
-    player1_stones = game.board[0]  # Калах первого игрока
-    player2_stones = game.board[-1]  # Калах второго игрока
-    num_pits = len(game.board) - 2  # Количество лунок
-
-    player1_pits_empty = all(stone == 0 for stone in game.board[1:num_pits + 1])  # Проверка пустоты лунок игрока 1
-    player2_pits_empty = all(stone == 0 for stone in game.board[1:num_pits + 1])  # Проверка пустоты лунок игрока 2
-
-    if player1_pits_empty or player2_pits_empty:
-        # Перенос оставшихся камней в калах
-        if player1_pits_empty:
-            for i in range(1, num_pits + 1):
-                player2_stones += game.board[i]
-                game.board[i] = 0
-        else:
-            for i in range(1, num_pits + 1):
-                player1_stones += game.board[i]
-                game.board[i] = 0
-
-        # Определение победителя
-        if player1_stones > player2_stones:
-            return {"winner": game.player1, "score": player1_stones}
-        elif player2_stones > player1_stones:
-            return {"winner": game.player2, "score": player2_stones}
-        else:
-            return {"winner": "draw", "score": player1_stones}
-
-    return {"status": "ongoing"}
 
 # Получение состояния игры по ID
 
