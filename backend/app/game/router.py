@@ -111,11 +111,10 @@ async def get_game_id_by_token(token: str) -> Optional[str]:
 
 # Выполнение хода
 @router.post("/move/{game_id}/{pit_index}", response_model=Game)
-def make_move_and_check_winner(game_id: str, pit_index: int):
+async def make_move(game_id: str, pit_index: int):
     game = games_store.get(game_id)
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
-
     if game.current_turn not in [game.player1, game.player2]:
         raise HTTPException(status_code=400, detail="Invalid player")
     if game.current_turn == game.player1 and pit_index >= len(game.board)//2:
@@ -214,14 +213,13 @@ def make_move_and_check_winner(game_id: str, pit_index: int):
     total_stones = 0
     for i in range(len(game.board)):
         total_stones += game.board[i]
-    logging.info(f"Всего камней:{total_stones}")
     if (game.board[0] > total_stones/2):
         game.winner = game.player1
-        logging.info(f"Игра3")
+        await notify_players(str(game_id), game)
         return game
     if (game.board[len(game.board)-1] > total_stones/2):
         game.winner = game.player2
-        logging.info(f"Игра4")
+        await notify_players(str(game_id), game)
         return game
     flag1 = True
     for i in range(1, len(game.board)//2):
@@ -239,14 +237,12 @@ def make_move_and_check_winner(game_id: str, pit_index: int):
             temp[len(game.board)-1] += temp[i]
     if (flag1 or flag2):
         if (game.board[0] > game.board[len(game.board)-1]):
-            logging.info(f"Игра5")
             game.winner = game.player1
         elif (game.board[0] < game.board[len(game.board)-1]):
-            logging.info(f"Игра6")
             game.winner = game.player2
         else:
-            logging.info(f"Игра7")
             game.winner = "draw"
+    await notify_players(str(game_id), game)
     return game
 
 # Получение состояния игры по ID
