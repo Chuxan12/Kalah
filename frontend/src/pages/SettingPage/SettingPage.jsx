@@ -104,7 +104,7 @@ const SettingPage = () => {
           max={3}
           step={1}
           label="Сложность ИИ"
-          value={1}
+          value={sliderValues.ai_difficulty}
           onChange={(value) => handleSliderChange("ai_difficulty", value)}
         />
       )}
