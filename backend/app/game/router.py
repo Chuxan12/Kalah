@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from app.game.models import Game, Settings, GameResponse
 from app.game.dto import CreateGameGTO, SetPlayersDTO
-from app.game.dto import CreateGameGTO, SetPlayersDTO
 from typing import Dict, List, Optional
 from uuid import UUID
 import uuid
@@ -63,14 +62,9 @@ async def create_game(data: CreateGameGTO):
     board = [data.beans] * (data.holes)
     board.insert(0, 0)
     board.insert(len(board), 0)
-    board = [data.beans] * (data.holes)
-    board.insert(0, 0)
-    board.insert(len(board), 0)
 
     new_game = Game(
         id=str(data.id),
-        player1=str(-1),  # Задайте соответствующие значения для игроков
-        player2=str(-1),
         player1=str(-1),  # Задайте соответствующие значения для игроков
         player2=str(-1),
         board=board,
