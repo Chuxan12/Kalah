@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from app.game.models import Game, Settings, GameResponse
 from app.game.dto import CreateGameGTO, SetPlayersDTO
+from app.game.dto import CreateGameGTO, SetPlayersDTO
 from typing import Dict, List, Optional
 from uuid import UUID
 import uuid
@@ -34,7 +35,21 @@ async def set_players(data: SetPlayersDTO):
         temp.player2 = str(data.id2)
         logging.info(f"Второй: {temp}")
         await notify_players(str(temp.id), temp)
+
+
+@router.post("/set_players", response_model=GameResponse)
+async def set_players(data: SetPlayersDTO):
+    temp = games_store[data.game_id]
+    if temp.player1 == "-1":
+        temp.player1 = str(data.id1)
+        temp.current_turn = str(data.id1)
+        logging.info(f"Первый: {temp}")
+    else:
+        temp.player2 = str(data.id2)
+        logging.info(f"Второй: {temp}")
+        await notify_players(str(temp.id), temp)
     return GameResponse(game=temp, tokens={"player1": str(temp.player1), "player2": str(temp.player2)})
+
 
 
 @router.post("/", response_model=GameResponse)
@@ -48,9 +63,14 @@ async def create_game(data: CreateGameGTO):
     board = [data.beans] * (data.holes)
     board.insert(0, 0)
     board.insert(len(board), 0)
+    board = [data.beans] * (data.holes)
+    board.insert(0, 0)
+    board.insert(len(board), 0)
 
     new_game = Game(
         id=str(data.id),
+        player1=str(-1),  # Задайте соответствующие значения для игроков
+        player2=str(-1),
         player1=str(-1),  # Задайте соответствующие значения для игроков
         player2=str(-1),
         board=board,
@@ -151,12 +171,52 @@ async def make_move(game_id: str, player: str, pit_index: int):
     if pit_index < 1 or pit_index > len(game.board) - 2 or game.board[pit_index] == 0:
         raise HTTPException(status_code=400, detail="Invalid move")
 
+    # # Логика хода
+    # stones = game.board[pit_index]
+    # game.board[pit_index] = 0
+    # if (pit_index + 1 < game.board[:len(game.board)//2]):
+    #     index = pit_index + 1
+    # else:
+    #     index = len(game.board)-2
+    # if (game.current_turn == game.player1):
+    #     while stones > 0:
+    #         if (index + 1 < game.board[:len(game.board)//2]):
+    #             game.board[index] += 1
+    #             index += 1
+    #             stones -= 1
+    #         else:
+    #             game.board[index] += 1
+    #             stones -= 1
+    #             index -= 1
+    # if (game.current_turn == game.player2):
+    #     while stones > 0:
+    #         if (index + 1 < game.board[:len(game.board)//2]):
+    #             game.board[index] += 1
+    #             index += 1
+    #             stones -= 1
+    #         else:
+    #             game.board[index] += 1
+    #             stones -= 1
+    #             index -= 1
+
+# Проверка на допустимость хода
+    # pit_index от 1 до 10, так как 0 - это калах первого игрока, а 11 - калах второго игрока
+    if pit_index < 1 or pit_index > len(game.board) - 2 or game.board[pit_index] == 0:
+        raise HTTPException(status_code=400, detail="Invalid move")
+
     stones = game.board[pit_index]
+    game.board[pit_index] = 0  # Убираем камни из выбранной лунки
+    index = pit_index
     game.board[pit_index] = 0  # Убираем камни из выбранной лунки
     index = pit_index
 
     # Распределение камней
+    # Распределение камней
     while stones > 0:
+        index += 1
+        if index == 12:  # Если дошли до конца, пропускаем калах второго игрока (board[11])
+            index += 1
+        if index > 12:  # Если вышли за границы, возвращаемся в начало
         index += 1
         if index == 12:  # Если дошли до конца, пропускаем калах второго игрока (board[11])
             index += 1
@@ -196,6 +256,20 @@ async def make_move(game_id: str, player: str, pit_index: int):
 
     # Смена текущего игрока
     game.current_turn = game.player2 if game.current_turn == game.player1 else game.player1
+
+    # Проверка условия победы
+    # Предположим, что первые половина - это игрок 1
+    player1_stones = sum(game.board[:len(game.board)//2])
+    # Вторая половина - это игрок 2
+    player2_stones = sum(game.board[len(game.board)//2:])
+
+    if player1_stones == 0 or player2_stones == 0:
+        winner = game.player1 if player1_stones > player2_stones else game.player2
+        return {
+            "message": "Game over",
+            "winner": winner,
+            "game": game
+        }
 
     # Проверка условия победы
     # Предположим, что первые половина - это игрок 1
