@@ -31,7 +31,7 @@ async def set_players(data: SetPlayersDTO):
         temp.current_turn = str(data.id1)
         logging.info(f"Первый: {temp}")
     else:
-        temp.player2 = str(data.id2)
+        temp.player2 = str(data.id1)
         logging.info(f"Второй: {temp}")
         await notify_players(str(temp.id), temp)
     return GameResponse(game=temp, tokens={"player1": str(temp.player1), "player2": str(temp.player2)})
