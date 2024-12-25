@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from app.game.models import Game, Settings, GameResponse
 from app.game.dto import CreateGameGTO, SetPlayersDTO
+from app.game.dto import CreateGameGTO, SetPlayersDTO
 from typing import Dict, List, Optional
 from uuid import UUID
 import uuid
@@ -21,18 +22,35 @@ active_player_connections: Dict[str, WebSocket] = {}
 token_to_game_id: Dict[str, str] = {}
 
 # Создание новой игры
+
+
 @router.post("/set_players", response_model=GameResponse)
 async def set_players(data: SetPlayersDTO):
-    temp=games_store[data.game_id]
-    if temp.player1=="-1":
-        temp.player1=str(data.id1)
-        temp.current_turn=str(data.id1)
+    temp = games_store[data.game_id]
+    if temp.player1 == "-1":
+        temp.player1 = str(data.id1)
+        temp.current_turn = str(data.id1)
         logging.info(f"Первый: {temp}")
     else:
-        temp.player2=str(data.id1)
+        temp.player2 = str(data.id2)
+        logging.info(f"Второй: {temp}")
+        await notify_players(str(temp.id), temp)
+
+
+@router.post("/set_players", response_model=GameResponse)
+async def set_players(data: SetPlayersDTO):
+    temp = games_store[data.game_id]
+    if temp.player1 == "-1":
+        temp.player1 = str(data.id1)
+        temp.current_turn = str(data.id1)
+        logging.info(f"Первый: {temp}")
+    else:
+        temp.player2 = str(data.id2)
         logging.info(f"Второй: {temp}")
         await notify_players(str(temp.id), temp)
     return GameResponse(game=temp, tokens={"player1": str(temp.player1), "player2": str(temp.player2)})
+
+
 
 @router.post("/", response_model=GameResponse)
 async def create_game(data: CreateGameGTO):
@@ -42,10 +60,17 @@ async def create_game(data: CreateGameGTO):
                             holes_count=data.holes, turn_time=data.time_per_move)
     settings_store[str(id)] = new_settings
 
-    board = [data.beans] * (data.holes * 2)
+    board = [data.beans] * (data.holes)
+    board.insert(0, 0)
+    board.insert(len(board), 0)
+    board = [data.beans] * (data.holes)
+    board.insert(0, 0)
+    board.insert(len(board), 0)
 
     new_game = Game(
         id=str(data.id),
+        player1=str(-1),  # Задайте соответствующие значения для игроков
+        player2=str(-1),
         player1=str(-1),  # Задайте соответствующие значения для игроков
         player2=str(-1),
         board=board,
@@ -67,11 +92,10 @@ async def create_game(data: CreateGameGTO):
 
 
 async def notify_players(game_id: str, game: Game):
-    logging.info(f"Э")
+    logging.info(f"Э бля")
     message = {"type": "game_update", "game": game.dict()}
     for player in [game.token]:
         logging.info(f"Зашли в notify")
-        logging.info(player)
         if player in active_connections:
             logging.info(f"Активное соединение: {active_connections[player]}")
             await active_connections[player].send_json(message)
@@ -102,47 +126,89 @@ async def get_game_id_by_token(token: str) -> Optional[str]:
 # Сделать ход в игре
 
 
-@router.post("/{game_id}/move/")
-async def make_move(game_id: str, player: str, pit_index: int):
+# Выполнение хода
+@router.post("/move/{game_id}/{pit_index}")
+def make_move(game_id: str, pit_index: int):
     game = games_store.get(game_id)
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
 
-    if player != game.current_turn:
-        raise HTTPException(status_code=400, detail="It's not your turn")
+    if game.current_turn not in [game.player1, game.player2]:
+        raise HTTPException(status_code=400, detail="Invalid player")
 
-    if pit_index < 0 or pit_index >= len(game.board) or game.board[pit_index] == 0:
+    # Проверка на допустимость хода
+    num_pits = len(game.board) - 2  # Количество лунок (первый и последний элементы - калахи)
+    if pit_index < 1 or pit_index > num_pits or game.board[pit_index] == 0:
         raise HTTPException(status_code=400, detail="Invalid move")
 
-    # Логика хода
     stones = game.board[pit_index]
-    game.board[pit_index] = 0
-    index = pit_index + 1
+    game.board[pit_index] = 0  # Убираем камни из выбранной лунки
+    index = pit_index
 
+    # Распределение камней
     while stones > 0:
-        if index >= len(game.board):
+        index += 1
+        if index == len(game.board):  # Пропускаем калах второго игрока
+            index += 1
+        if index >= len(game.board):  # Зацикливаем на начало
             index = 0
         game.board[index] += 1
         stones -= 1
-        index += 1
+
+    # Проверка результата последнего камня
+    if index == 0:  # Если последний камень попал в калах первого игрока
+        pass  # Игрок ходит снова
+    elif index == len(game.board) - 1:  # Если последний камень попал в калах второго игрока
+        pass  # Ничего не делаем, ход переходит к другому игроку
+    elif game.board[index] == 1:  # Если последний камень попал в пустую лунку
+        opposite_index = (num_pits + 1) - index  # Находим противоположную лунку
+        if game.board[opposite_index] > 0:  # Проверяем, что в противоположной лунке есть камни
+            if game.current_turn == game.player1:
+                game.board[0] += 1 + game.board[opposite_index]  # Переносим в калах первого игрока
+                game.board[opposite_index] = 0  # Очищаем противоположную лунку
+            else:
+                game.board[-1] += 1 + game.board[opposite_index]  # Переносим в калах второго игрока
+                game.board[opposite_index] = 0  # Очищаем противоположную лунку
 
     # Смена текущего игрока
     game.current_turn = game.player2 if game.current_turn == game.player1 else game.player1
 
-    # Проверка условия победы
-    player1_stones = sum(game.board[:len(game.board)//2])  # Предположим, что первые половина - это игрок 1
-    player2_stones = sum(game.board[len(game.board)//2:])  # Вторая половина - это игрок 2
+    return game
 
-    if player1_stones == 0 or player2_stones == 0:
-        winner = game.player1 if player1_stones > player2_stones else game.player2
-        return {
-            "message": "Game over",
-            "winner": winner,
-            "game": game
-        }
+# Проверка условий окончания игры
+@router.get("/check_winner/{game_id}")
+def check_winner(game_id: str):
+    game = games_store.get(game_id)
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
 
-    await notify_players(game_id, game)
-    return {"message": "Move made", "game": game}
+    player1_stones = game.board[0]  # Калах первого игрока
+    player2_stones = game.board[-1]  # Калах второго игрока
+    num_pits = len(game.board) - 2  # Количество лунок
+
+    player1_pits_empty = all(stone == 0 for stone in game.board[1:num_pits + 1])  # Проверка пустоты лунок игрока 1
+    player2_pits_empty = all(stone == 0 for stone in game.board[1:num_pits + 1])  # Проверка пустоты лунок игрока 2
+
+    if player1_pits_empty or player2_pits_empty:
+        # Перенос оставшихся камней в калах
+        if player1_pits_empty:
+            for i in range(1, num_pits + 1):
+                player2_stones += game.board[i]
+                game.board[i] = 0
+        else:
+            for i in range(1, num_pits + 1):
+                player1_stones += game.board[i]
+                game.board[i] = 0
+
+        # Определение победителя
+        if player1_stones > player2_stones:
+            return {"winner": game.player1, "score": player1_stones}
+        elif player2_stones > player1_stones:
+            return {"winner": game.player2, "score": player2_stones}
+        else:
+            return {"winner": "draw", "score": player1_stones}
+
+    return {"status": "ongoing"}
 
 # Получение состояния игры по ID
 
