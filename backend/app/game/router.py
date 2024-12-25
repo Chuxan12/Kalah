@@ -26,7 +26,7 @@ token_to_game_id: Dict[str, str] = {}
 @router.post("/set_players", response_model=GameResponse)
 async def set_players(data: SetPlayersDTO):
     temp = games_store[data.game_id]
-    if temp.player1 == "-1":
+    if temp.player1 == "-1" or temp.player1 == str(data.id1):
         temp.player1 = str(data.id1)
         temp.current_turn = str(data.id1)
         logging.info(f"Первый: {temp}")
