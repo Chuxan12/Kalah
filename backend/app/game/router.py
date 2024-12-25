@@ -34,19 +34,6 @@ async def set_players(data: SetPlayersDTO):
         temp.player2 = str(data.id2)
         logging.info(f"Второй: {temp}")
         await notify_players(str(temp.id), temp)
-
-
-@router.post("/set_players", response_model=GameResponse)
-async def set_players(data: SetPlayersDTO):
-    temp = games_store[data.game_id]
-    if temp.player1 == "-1":
-        temp.player1 = str(data.id1)
-        temp.current_turn = str(data.id1)
-        logging.info(f"Первый: {temp}")
-    else:
-        temp.player2 = str(data.id2)
-        logging.info(f"Второй: {temp}")
-        await notify_players(str(temp.id), temp)
     return GameResponse(game=temp, tokens={"player1": str(temp.player1), "player2": str(temp.player2)})
 
 
