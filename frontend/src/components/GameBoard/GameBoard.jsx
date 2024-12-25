@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import Kalah from "../Kalah/Kalah";
 import Hole from "../GameHole/GameHole";
@@ -16,6 +17,8 @@ const GameBoard = () => {
     token: "",
   });
 
+  const location = useLocation();
+
   const [showFinishButton, setShowFinishButton] = useState(false);
   const [webSocket, setWebSocket] = useState(null);
 
@@ -24,7 +27,6 @@ const GameBoard = () => {
       try {
         const temp = localStorage.getItem("id");
         setToken(temp);
-
         if (!token) {
           console.error("Token not found in localStorage");
           return;
@@ -93,17 +95,17 @@ const GameBoard = () => {
         };
 
         setWebSocket(ws);
-
-        return () => {
-          ws.close();
-        };
       } catch (error) {
         console.error("Error during setup:", error);
       }
+
+      return () => {
+        ws.close();
+      };
     };
 
     fetchPlayerIdAndSetPlayers();
-  }, []);
+  }, [location]);
 
   const handleHoleClick = (index) => {
     const selectedSeeds = boardState.holes.get(index);
@@ -126,15 +128,12 @@ const GameBoard = () => {
       const tok = localStorage.getItem("id");
       console.log(tok);
       const response = await axios.post(
-        `api/games/${tok}/move`,
+        `api/games/move/${tok}/${boardState.selectedHole}`,
         {
-          game_id: tok,
-          pit_index: boardState.selectedHole,
           player: idPlayer,
         },
         { withCredentials: true }
       );
-      console.log("отправлен индекс");
     } catch (error) {}
   };
 

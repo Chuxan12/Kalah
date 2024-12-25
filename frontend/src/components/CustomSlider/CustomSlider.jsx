@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
-import styles from './CustomSlider.module.css';
+import React from "react";
+import PropTypes from "prop-types";
+import styles from "./CustomSlider.module.css";
 
-const CustomSlider = ({ min, max, label, step }) => {
-  const [value, setValue] = useState(min);
-
+const CustomSlider = ({ min, max, label, step, value, onChange }) => {
   const handleChange = (e) => {
-    setValue(Number(e.target.value));
+    onChange(Number(e.target.value));
   };
 
   return (
@@ -35,6 +33,9 @@ CustomSlider.propTypes = {
   min: PropTypes.number.isRequired,
   max: PropTypes.number.isRequired,
   label: PropTypes.string.isRequired,
+  step: PropTypes.number,
+  value: PropTypes.number.isRequired,
+  onChange: PropTypes.func.isRequired,
 };
 
 export default CustomSlider;
