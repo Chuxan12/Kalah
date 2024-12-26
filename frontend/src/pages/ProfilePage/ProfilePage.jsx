@@ -5,13 +5,14 @@ import axios from "axios";
 
 const ProfilePage = () => {
   const [userData, setUserData] = useState({
-    first_name: "",
-    avatar: "",
-    email: "",
+    first_name: null,
+    avatar: null,
+    email: null,
     games: null,
     wins: null,
   });
-
+  const [imageBase64, setImageBase64] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [userInput, setUserInput] = useState({
     old_password: "",
     password: "",
@@ -41,18 +42,25 @@ const ProfilePage = () => {
     fetchUserData();
   }, [navigate]);
 
-  // Обработчик изменения аватара
+  //хендл аватар
   const handleAvatarChange = (event) => {
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setUserData((prevData) => ({
-          ...prevData,
-          avatar: reader.result,
+
+      reader.onload = () => {
+        const base64String = reader.result.split(",")[1]; // Убираем метаданные Base64
+        setImageBase64(base64String); // Сохраняем строку Base64
+        setImagePreview(reader.result); // Для предпросмотра
+
+        // Обновляем `userData` с новым аватаром
+        setUserData((prevUserData) => ({
+          ...prevUserData,
+          avatar: reader.result, // Для отображения в img src
         }));
       };
-      reader.readAsDataURL(file);
+
+      reader.readAsDataURL(file); // Читаем файл как Data URL
     }
   };
 
@@ -65,15 +73,17 @@ const ProfilePage = () => {
     }));
   };
 
-  // Подтверждение изменения данных
+  // хендл изменения данных
   const handleClickOnConfirmButton = async () => {
     try {
       const dataToSend = {
         first_name: userData.first_name,
-        avatar: userData.avatar,
+        avatar: imageBase64,
         old_password: userInput.old_password,
         password: userInput.password,
       };
+
+      console.log(imageBase64);
       const response = await axios.put("api/auth/update", dataToSend, {
         withCredentials: true,
       });
