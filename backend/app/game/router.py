@@ -150,7 +150,7 @@ async def make_move(game_id: str, pit_index: int):
                 index = 1
             if (stones == 1):
                 if (index != 0):
-                    if (index < len(game.board)//2 + 1):
+                    if (index < len(game.board)//2):
                         if (temp[index] == 0):
                             temp[len(game.board) //
                                  2] += temp[len(game.board) - index] + 1
@@ -159,15 +159,19 @@ async def make_move(game_id: str, pit_index: int):
                         else:
                             temp[index] += 1
                             stones -= 1
+                            logging.info(f"Игра22:{stones}")
                     else:
                         temp[index] += 1
                         stones -= 1
+                        logging.info(f"Игра23:{stones}")
                 else:
                     temp[index] += 1
                     stones -= 1
+                    logging.info(f"Игра24:{stones}")
             else:
                 temp[index] += 1
                 stones -= 1
+                logging.info(f"Игра25:{stones}")
     if (game.current_turn == game.player2):
         while stones > 0:
             index += 1
@@ -198,10 +202,10 @@ async def make_move(game_id: str, pit_index: int):
     logging.info(f"Игра2:{temp}")
     for i in range(0, len(game.board)):
         game.board[i] = temp[i]
-    if (game.current_turn == game.player1) and (index == 0):
-        game.current_turn = game.player2
-    elif (game.current_turn == game.player2) and (index == len(game.board)//2 + 1):
+    if (game.current_turn == game.player1) and (index == len(game.board)//2):
         game.current_turn = game.player1
+    elif (game.current_turn == game.player2) and (index == 0):
+        game.current_turn = game.player2
     else:
         game.current_turn = game.player2 if game.current_turn == game.player1 else game.player1
 
