@@ -12,7 +12,7 @@ from alembic import context
 from app.config import database_url
 from app.dao.database import Base
 from app.auth.models import User, UserStatistics
-from app.game.models import Game, Settings, Hole, Kalaha
+#from app.game.models import Game, Settings
 
 config = context.config
 config.set_main_option("sqlalchemy.url", database_url)
