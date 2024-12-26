@@ -1,11 +1,11 @@
 from typing import List
 from fastapi import APIRouter, Response, Depends
 from app.auth.dependencies import get_current_user, get_current_admin_user, get_user_by_id
-from app.auth.models import User
+from app.auth.models import User, UserStatistics
 from app.exceptions import UserAlreadyExistsException, IncorrectEmailOrPasswordException
 from app.auth.auth import authenticate_user, create_access_token
 from app.auth.dao import UsersDAO
-from app.auth.schemas import SUserRegister, SUserAuth, EmailModel, SUserAddDB, SUserInfo, SUserUpdate, UserGetDTO, SUserAvatar
+from app.auth.schemas import SUserRegister, SUserAuth, EmailModel, SUserAddDB, SUserInfo, SUserUpdate, UserGetDTO, SUserStatistics
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.utils import get_password_hash
 from app.auth.utils import verify_password
@@ -25,6 +25,11 @@ async def register_user(response: Response, user_data: SUserRegister, session: A
     user_data_dict = user_data.model_dump()
     del user_data_dict['confirm_password']
     new_user = await UsersDAO.add(session=session, values=SUserAddDB(**user_data_dict))
+    # Создаем статистику для нового пользователя
+    new_user_statistics = UserStatistics(user_id=new_user.id)
+    session.add(new_user_statistics)  # Добавляем объект статистики в сессию
+    await session.commit()  # Сохраняем изменения в базе данных
+
     access_token = create_access_token({"sub": str(new_user.id)})
     response.set_cookie(key="users_access_token",
                         value=access_token, httponly=True)
@@ -51,11 +56,6 @@ async def logout_user(response: Response):
 @router.get("/me/")
 async def get_me(user_data: User = Depends(get_current_user)) -> UserGetDTO:
     return user_data
-
-
-@router.post("/avatar/", response_model=SUserAvatar)
-async def get_avatar(user_data: User = Depends(get_current_user)) -> SUserAvatar:
-    return SUserAvatar(avatar=user_data["avatar"])
 
 
 @router.get("/get_user_by_id/")

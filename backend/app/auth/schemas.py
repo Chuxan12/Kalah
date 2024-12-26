@@ -60,5 +60,5 @@ class SUserUpdate(BaseModel):
     old_password: Optional[str] = Field(None, min_length=5, max_length=50, description="Пароль, от 5 до 50 знаков. Оставьте пустым, если не хотите менять.")
     password: Optional[str] = Field(None, min_length=5, max_length=50, description="Пароль, от 5 до 50 знаков. Оставьте пустым, если не хотите менять.")
 
-class SUserAvatar(BaseModel):
-    avatar: Optional[str] = Field(None, description="URL или путь к изображению аватара. Оставьте пустым, если не хотите менять.")   
+class SUserStatistics(BaseModel):
+    wins: Optional[str]=Field(None, description="Кол-во побед.")

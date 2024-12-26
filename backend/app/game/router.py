@@ -173,19 +173,15 @@ async def make_move(game_id: str, pit_index: int):
                         else:
                             temp[index] += 1
                             stones -= 1
-                            logging.info(f"Игра22:{stones}")
                     else:
                         temp[index] += 1
                         stones -= 1
-                        logging.info(f"Игра23:{stones}")
                 else:
                     temp[index] += 1
                     stones -= 1
-                    logging.info(f"Игра24:{stones}")
             else:
                 temp[index] += 1
                 stones -= 1
-                logging.info(f"Игра25:{stones}")
     if (game.current_turn == game.player2):
         while stones > 0:
             index += 1
@@ -213,7 +209,6 @@ async def make_move(game_id: str, pit_index: int):
                 temp[index] += 1
                 stones -= 1
 
-    logging.info(f"Игра2:{temp}")
     for i in range(0, len(game.board)):
         game.board[i] = temp[i]
     if (game.current_turn == game.player1) and (index == len(game.board)//2):
@@ -282,7 +277,7 @@ async def get_settings():
     return settings_store
 
 
-async def set_stats(id1: int, id2: int, session: AsyncSession = SessionDep):
+async def set_stats(id1: int, id2: int, session: AsyncSession = TransactionSessionDep):
     query = select(UserStatistics).where(UserStatistics.user_id == id1)
     result = await session.execute(query)
     result = result.scalar_one_or_none()
@@ -297,7 +292,7 @@ async def set_stats(id1: int, id2: int, session: AsyncSession = SessionDep):
     session.flush()
 
 
-async def set_draw(id1: int, id2: int, session: AsyncSession = SessionDep):
+async def set_draw(id1: int, id2: int, session: AsyncSession = TransactionSessionDep):
     query = select(UserStatistics).where(UserStatistics.user_id == id1)
     result = await session.execute(query)
     result = result.scalar_one_or_none()

@@ -29,6 +29,7 @@ async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
 
 def get_token(request: Request):
     token = request.cookies.get('users_access_token')
+    logging.info(token)
     if not token:
         raise TokenNoFound
     return token
