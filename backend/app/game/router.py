@@ -6,6 +6,11 @@ from uuid import UUID
 import uuid
 import asyncio
 import logging
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.dao.session_maker import TransactionSessionDep, SessionDep
+from app.auth.models import UserStatistics
+from sqlalchemy.future import select
+from sqlalchemy import update
 
 router = APIRouter(prefix="/games", tags=["Games"])
 
@@ -14,7 +19,7 @@ games_store: Dict[str, Game] = {}
 settings_store: Dict[str, Settings] = {}
 
 # Активные WebSocket соединения
-active_connections: Dict[str, WebSocket] = {}
+active_connections: Dict[str, list[WebSocket]] = {}
 active_player_connections: Dict[str, WebSocket] = {}
 
 # Хранилище для токенов и ID игр
@@ -35,6 +40,7 @@ async def set_players(data: SetPlayersDTO):
         temp.player2 = str(data.id1)
         logging.info(f"Второй: {temp}")
         await notify_players(str(temp.id), temp)
+    await notify_players(str(temp.id), temp)
     return GameResponse(game=temp, tokens={"player1": str(temp.player1), "player2": str(temp.player2)})
 
 
@@ -67,7 +73,6 @@ async def create_game(data: CreateGameGTO):
     token2 = str(uuid.uuid4())
     token_to_game_id[token1] = str(data.id)
     token_to_game_id[token2] = str(data.id)
-    await notify_players(str(data.id), new_game)
     logging.info(f"Активное соединение: {games_store}")
     return GameResponse(game=new_game, tokens={"player1": token1, "player2": token2})
 
@@ -77,11 +82,14 @@ async def create_game(data: CreateGameGTO):
 async def notify_players(game_id: str, game: Game):
     logging.info(f"Э бля")
     message = {"type": "game_update", "game": game.dict()}
-    for player in [game.token]:
+    for token in [game.token]:
         logging.info(f"Зашли в notify")
-        if player in active_connections:
-            logging.info(f"Активное соединение: {active_connections[player]}")
-            await active_connections[player].send_json(message)
+        for connect in active_connections[token]:
+            logging.info(active_connections)
+            await connect.send_json(message)
+        # if player in active_connections:
+        #     logging.info(f"Активное соединение: {active_connections[player]}")
+        #     await active_connections[player].send_json(message)
 
 # WebSocket для подключения игроков
 
@@ -89,8 +97,13 @@ async def notify_players(game_id: str, game: Game):
 @router.websocket("/ws/{token}")
 async def websocket_endpoint(websocket: WebSocket, token: str):
     await websocket.accept()
+    logging.info(active_connections)
 
-    active_connections[token] = websocket
+    if token in active_connections:
+        active_connections[token].append(websocket)
+    else:
+        active_connections[token] = [websocket]
+
     logging.info(f"User {token} connected.")
 
     try:
@@ -130,6 +143,7 @@ async def make_move(game_id: str, pit_index: int):
     # Количество лунок (первый и последний элементы - калахи)
     num_pits = len(game.board)
     if pit_index < 1 or pit_index > num_pits or game.board[pit_index] == 0:
+        await notify_players(str(game_id), game)
         raise HTTPException(status_code=400, detail="Invalid move")
 
     logging.info(f"Игра1:{game}")
@@ -213,10 +227,12 @@ async def make_move(game_id: str, pit_index: int):
     for i in range(len(game.board)):
         total_stones += game.board[i]
     if (game.board[0] > total_stones/2):
+        set_stats(game.player2, game.player1)
         game.winner = game.player2
         await notify_players(str(game_id), game)
         return game
-    if (game.board[len(game.board)-1] > total_stones/2):
+    if (game.board[len(game.board)//2] > total_stones/2):
+        set_stats(game.player1, game.player2)
         game.winner = game.player1
         await notify_players(str(game_id), game)
         return game
@@ -226,21 +242,25 @@ async def make_move(game_id: str, pit_index: int):
             flag1 = False
     if (flag1):
         for i in range(1, len(game.board)//2):
-            temp[len(game.board) - 1] += temp[i]
+            temp[len(game.board)//2] += temp[i]
     flag2 = True
     for i in range(len(game.board)//2, len(game.board)-1):
         if (temp[i] != 0):
             flag2 = False
     if (flag2):
-        for i in range(1, len(game.board)//2):
+        for i in range(len(game.board)//2, len(game.board)):
             temp[0] += temp[i]
     if (flag1 or flag2):
-        if (game.board[0] > game.board[len(game.board)-1]):
+        if (game.board[0] > game.board[len(game.board)//2]):
+            set_stats(game.player2, game.player1)
             game.winner = game.player2
-        elif (game.board[0] < game.board[len(game.board)-1]):
+        elif (game.board[0] < game.board[len(game.board)//2]):
+            set_stats(game.player1, game.player2)
             game.winner = game.player1
         else:
+            set_draw(game.player1, game.player2)
             game.winner = "draw"
+
     await notify_players(str(game_id), game)
     return game
 
@@ -260,3 +280,32 @@ async def get_game(game_id: str):
 @router.get("/settings/", response_model=Dict[int, Settings])
 async def get_settings():
     return settings_store
+
+
+async def set_stats(id1: int, id2: int, session: AsyncSession = SessionDep):
+    query = select(UserStatistics).where(UserStatistics.user_id == id1)
+    result = await session.execute(query)
+    result = result.scalar_one_or_none()
+    result.wins += 1
+    result.games_played += 1
+    session.add(result)
+    query = select(UserStatistics).where(UserStatistics.user_id == id2)
+    result = await session.execute(query)
+    result = result.scalar_one_or_none()
+    result.games_played += 1
+    session.add(result)
+    session.flush()
+
+
+async def set_draw(id1: int, id2: int, session: AsyncSession = SessionDep):
+    query = select(UserStatistics).where(UserStatistics.user_id == id1)
+    result = await session.execute(query)
+    result = result.scalar_one_or_none()
+    result.games_played += 1
+    session.add(result)
+    query = select(UserStatistics).where(UserStatistics.user_id == id2)
+    result = await session.execute(query)
+    result = result.scalar_one_or_none()
+    result.games_played += 1
+    session.add(result)
+    session.flush()
