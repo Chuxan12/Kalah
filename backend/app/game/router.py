@@ -29,6 +29,7 @@ async def set_players(data: SetPlayersDTO):
     if temp.player1 == "-1" or temp.player1 == str(data.id1):
         temp.player1 = str(data.id1)
         temp.current_turn = str(data.id1)
+        await notify_players(str(temp.id), temp)
         logging.info(f"Первый: {temp}")
     else:
         temp.player2 = str(data.id1)
@@ -49,7 +50,7 @@ async def create_game(data: CreateGameGTO):
         raise HTTPException(status_code=400, detail="Invalid beans")
     board = [data.beans] * (data.holes)
     board.insert(0, 0)
-    board.insert(len(board), 0)
+    board.insert(len(board)//2 + 1, 0)
 
     new_game = Game(
         id=str(data.id),
@@ -117,23 +118,24 @@ async def make_move(game_id: str, pit_index: int):
     if game.current_turn not in [game.player1, game.player2]:
         raise HTTPException(status_code=400, detail="Invalid player")
     if game.current_turn == game.player1 and pit_index >= len(game.board)//2:
+        logging.info(f"Игра11:{game}")
         raise HTTPException(status_code=400, detail="Invalid index")
     if game.current_turn == game.player2 and pit_index < len(game.board)//2:
+        logging.info(f"Игра12:{game}")
         raise HTTPException(status_code=400, detail="Invalid index")
-
+    if pit_index == len(game.board)//2 or pit_index == 0:
+        logging.info(f"Игра13:{game}")
+        raise HTTPException(status_code=400, detail="Invalid index")
     # Проверка на допустимость хода
     # Количество лунок (первый и последний элементы - калахи)
-    num_pits = len(game.board) - 2
+    num_pits = len(game.board)
     if pit_index < 1 or pit_index > num_pits or game.board[pit_index] == 0:
         raise HTTPException(status_code=400, detail="Invalid move")
 
     logging.info(f"Игра1:{game}")
     temp = []
-    for i in range(0, len(game.board)//2):
+    for i in range(0, len(game.board)):
         temp.append(game.board[i])
-    for i in range(len(game.board) - 2, len(game.board)//2 - 1, -1):
-        temp.append(game.board[i])
-    temp.append(game.board[len(game.board) - 1])
     logging.info(f"Игра11:{temp}")
     stones = temp[pit_index]
     temp[pit_index] = 0  # Убираем камни из выбранной лунки
@@ -145,14 +147,14 @@ async def make_move(game_id: str, pit_index: int):
             if index == 0:  # Пропускаем калах второго игрока
                 index += 1
             if index >= len(game.board):  # Зацикливаем на начало
-                index = 0
+                index = 1
             if (stones == 1):
                 if (index != 0):
-                    if (index < len(game.board)//2):
+                    if (index < len(game.board)//2 + 1):
                         if (temp[index] == 0):
-                            temp[len(game.board) -
-                                 1] += temp[len(game.board) - 1 - index] + 1
-                            temp[len(game.board) - 1 - index] = 0
+                            temp[len(game.board) //
+                                 2] += temp[len(game.board) - index] + 1
+                            temp[len(game.board) - index] = 0
                             stones -= 1
                         else:
                             temp[index] += 1
@@ -169,7 +171,7 @@ async def make_move(game_id: str, pit_index: int):
     if (game.current_turn == game.player2):
         while stones > 0:
             index += 1
-            if index == len(game.board) - 1:  # Пропускаем калах первого игрока
+            if index == len(game.board)//2:  # Пропускаем калах первого игрока
                 index += 1
             if index >= len(game.board):  # Зацикливаем на начало
                 index = 0
@@ -177,8 +179,8 @@ async def make_move(game_id: str, pit_index: int):
                 if (index != len(game.board) - 1):
                     if (index >= len(game.board)//2):
                         if (temp[index] == 0):
-                            temp[0] += temp[len(game.board) - 1 - index] + 1
-                            temp[len(game.board) - 1 - index] = 0
+                            temp[0] += temp[len(game.board) - index + 1] + 1
+                            temp[len(game.board) - index] = 0
                             stones -= 1
                         else:
                             temp[index] += 1
@@ -194,18 +196,12 @@ async def make_move(game_id: str, pit_index: int):
                 stones -= 1
 
     logging.info(f"Игра2:{temp}")
-    game.board[0] = temp[0]
-    game.board[len(game.board)-1] = temp[len(game.board)-1]
-    for i in range(1, len(game.board)//2):
+    for i in range(0, len(game.board)):
         game.board[i] = temp[i]
-    cnt = 0
-    for i in range(len(game.board)//2, len(game.board)-1):
-        game.board[i] = temp[len(game.board)-2 - cnt]
-        cnt += 1
     if (game.current_turn == game.player1) and (index == 0):
-        game.current_turn = game.player1
-    elif (game.current_turn == game.player2) and (index == len(game.board)-1):
         game.current_turn = game.player2
+    elif (game.current_turn == game.player2) and (index == len(game.board)//2 + 1):
+        game.current_turn = game.player1
     else:
         game.current_turn = game.player2 if game.current_turn == game.player1 else game.player1
 
