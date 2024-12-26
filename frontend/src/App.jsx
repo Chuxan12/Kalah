@@ -12,6 +12,7 @@ import AboutDevelopersPage from "./pages/AboutDevelopersPage/AboutDevelopersPage
 import AboutGamePage from "./pages/AboutGamePage/AboutGamePage";
 import GameBoardPage from "./pages/GameBoardPage/GameBoardPage";
 import axios from "axios";
+import AboutSystemPage from "./pages/AboutSystemPage/AboutSystemPage";
 
 const App = () => {
   const [currentTheme, setCurrentTheme] = useState("desert");
@@ -22,11 +23,12 @@ const App = () => {
           <Route index element={<MainPage />} />
           <Route path="registration" element={<RegistrationPage />} />
           <Route path="login" element={<LoginPage />} />
-          <Route path="profile" element={<ProfilePage/>}/>
+          <Route path="profile" element={<ProfilePage />} />
           <Route path="game-setting" element={<SettingPage />} />
           <Route path="about-developers" element={<AboutDevelopersPage />} />
           <Route path="about-game" element={<AboutGamePage />} />
           <Route path="game-board" element={<GameBoardPage />} />
+          <Route path="about-system" element={<AboutSystemPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

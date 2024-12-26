@@ -11,14 +11,32 @@ const ProfilePage = () => {
     games: null,
     wins: null,
   });
-  const [imageBase64, setImageBase64] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
   const [userInput, setUserInput] = useState({
     old_password: "",
     password: "",
   });
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const navigate = useNavigate();
+
+  // Предустановленные аватары
+  const presetAvatars = [
+    "/avatars/avatar_anime.jpg",
+    "/avatars/avatar_ant.jpeg",
+    "/avatars/avatar_minion.jpg",
+    "/avatars/avatar_vendeta.jpg",
+    "/avatars/avatar_z.jpg",
+    "/avatars/krutoi.jpg",
+    "/avatars/avatar_pobedni.jpg",
+    "/avatars/avatar_rabochi.jpg",
+    "/avatars/avatar_goida.jpg",
+    "/avatars/avatar_jaba.jpg",
+    "/avatars/avatar_starege.jpg",
+    "/avatars/avatar_anime_z.jpg",
+    "/avatars/avatar_pozdman.jpg",
+    "/avatars/avatar_soleniya.jpg",
+    "/avatars/avatar_dobro.jpg",
+  ];
 
   // Проверка авторизации при загрузке страницы
   useEffect(() => {
@@ -27,7 +45,7 @@ const ProfilePage = () => {
         const response = await axios.get("api/auth/me/", {
           withCredentials: true,
         });
-        if (response.status == 200) {
+        if (response.status === 200) {
           setUserData(response.data);
         }
       } catch (error) {
@@ -42,28 +60,6 @@ const ProfilePage = () => {
     fetchUserData();
   }, [navigate]);
 
-  //хендл аватар
-  const handleAvatarChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-
-      reader.onload = () => {
-        const base64String = reader.result.split(",")[1]; // Убираем метаданные Base64
-        setImageBase64(base64String); // Сохраняем строку Base64
-        setImagePreview(reader.result); // Для предпросмотра
-
-        // Обновляем `userData` с новым аватаром
-        setUserData((prevUserData) => ({
-          ...prevUserData,
-          avatar: reader.result, // Для отображения в img src
-        }));
-      };
-
-      reader.readAsDataURL(file); // Читаем файл как Data URL
-    }
-  };
-
   // Обновление значений полей ввода
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -73,20 +69,32 @@ const ProfilePage = () => {
     }));
   };
 
+  // Выбор аватара из предустановленных
+  const handleAvatarSelect = (url) => {
+    setUserData((prevUserData) => ({
+      ...prevUserData,
+      avatar: url,
+    }));
+    setIsModalOpen(false);
+  };
+
   // хендл изменения данных
   const handleClickOnConfirmButton = async () => {
     try {
       const dataToSend = {
         first_name: userData.first_name,
-        avatar: imageBase64,
+        avatar: userData.avatar,
         old_password: userInput.old_password,
         password: userInput.password,
       };
 
-      console.log(imageBase64);
-      const response = await axios.put("api/auth/update", dataToSend, {
-        withCredentials: true,
-      });
+      const response = await axios.put(
+        "api/auth/update/",
+        {
+          withCredentials: true,
+        },
+        dataToSend
+      );
 
       alert("Изменения успешно сохранены!");
     } catch (error) {
@@ -115,16 +123,12 @@ const ProfilePage = () => {
       <div className={styles.profileCard}>
         <div className={styles.avatarSection}>
           <img src={userData.avatar} alt="" className={styles.profileAvatar} />
-          <label htmlFor="avatar-upload" className={styles.changeAvatarButton}>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className={styles.changeAvatarButton}
+          >
             Изменить аватар
-          </label>
-          <input
-            id="avatar-upload"
-            type="file"
-            accept="image/*"
-            className={styles.fileInput}
-            onChange={handleAvatarChange}
-          />
+          </button>
 
           <button onClick={handleLogout} className={styles.logoutButton}>
             Выйти
@@ -188,6 +192,31 @@ const ProfilePage = () => {
           </div>
         </div>
       </div>
+
+      {isModalOpen && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <h3>Выберите аватар</h3>
+            <div className={styles.avatarGrid}>
+              {presetAvatars.map((url, index) => (
+                <img
+                  key={index}
+                  src={url}
+                  alt={`Аватар ${index + 1}`}
+                  className={styles.avatarOption}
+                  onClick={() => handleAvatarSelect(url)}
+                />
+              ))}
+            </div>
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className={styles.closeModalButton}
+            >
+              Закрыть
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
