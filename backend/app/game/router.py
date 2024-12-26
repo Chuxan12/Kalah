@@ -40,7 +40,6 @@ async def set_players(data: SetPlayersDTO):
 @router.post("/", response_model=GameResponse)
 async def create_game(data: CreateGameGTO):
     # Создание новой настройки игры
-    settings_id = len(settings_store) + 1  # Генерация нового ID для настроек
     new_settings = Settings(stones_count=data.beans,
                             holes_count=data.holes, turn_time=data.time_per_move)
     settings_store[str(id)] = new_settings
@@ -143,7 +142,7 @@ async def make_move(game_id: str, pit_index: int):
     if (game.current_turn == game.player1):
         while stones > 0:
             index += 1
-            if index == len(game.board) - 1:  # Пропускаем калах второго игрока
+            if index == 0:  # Пропускаем калах второго игрока
                 index += 1
             if index >= len(game.board):  # Зацикливаем на начало
                 index = 0
@@ -151,7 +150,8 @@ async def make_move(game_id: str, pit_index: int):
                 if (index != 0):
                     if (index < len(game.board)//2):
                         if (temp[index] == 0):
-                            temp[0] += temp[len(game.board) - 1 - index] + 1
+                            temp[len(game.board) -
+                                 1] += temp[len(game.board) - 1 - index] + 1
                             temp[len(game.board) - 1 - index] = 0
                             stones -= 1
                         else:
@@ -169,16 +169,15 @@ async def make_move(game_id: str, pit_index: int):
     if (game.current_turn == game.player2):
         while stones > 0:
             index += 1
-            if index == 0:  # Пропускаем калах первого игрока
+            if index == len(game.board) - 1:  # Пропускаем калах первого игрока
                 index += 1
             if index >= len(game.board):  # Зацикливаем на начало
-                index = 1
+                index = 0
             if (stones == 1):
                 if (index != len(game.board) - 1):
                     if (index >= len(game.board)//2):
                         if (temp[index] == 0):
-                            temp[len(game.board) -
-                                 1] += temp[len(game.board) - 1 - index] + 1
+                            temp[0] += temp[len(game.board) - 1 - index] + 1
                             temp[len(game.board) - 1 - index] = 0
                             stones -= 1
                         else:
@@ -214,11 +213,11 @@ async def make_move(game_id: str, pit_index: int):
     for i in range(len(game.board)):
         total_stones += game.board[i]
     if (game.board[0] > total_stones/2):
-        game.winner = game.player1
+        game.winner = game.player2
         await notify_players(str(game_id), game)
         return game
     if (game.board[len(game.board)-1] > total_stones/2):
-        game.winner = game.player2
+        game.winner = game.player1
         await notify_players(str(game_id), game)
         return game
     flag1 = True
@@ -227,19 +226,19 @@ async def make_move(game_id: str, pit_index: int):
             flag1 = False
     if (flag1):
         for i in range(1, len(game.board)//2):
-            temp[0] += temp[i]
+            temp[len(game.board) - 1] += temp[i]
     flag2 = True
     for i in range(len(game.board)//2, len(game.board)-1):
         if (temp[i] != 0):
             flag2 = False
     if (flag2):
         for i in range(1, len(game.board)//2):
-            temp[len(game.board)-1] += temp[i]
+            temp[0] += temp[i]
     if (flag1 or flag2):
         if (game.board[0] > game.board[len(game.board)-1]):
-            game.winner = game.player1
-        elif (game.board[0] < game.board[len(game.board)-1]):
             game.winner = game.player2
+        elif (game.board[0] < game.board[len(game.board)-1]):
+            game.winner = game.player1
         else:
             game.winner = "draw"
     await notify_players(str(game_id), game)
