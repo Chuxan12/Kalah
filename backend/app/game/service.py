@@ -20,6 +20,7 @@ class KalahBot:
 
     def choose_move(self, game: 'Game') -> Optional[int]:
         best_move, _ = self.minimax(game, self.difficulty, True)
+        logging.info(f"Лучший ход:{best_move}")
         return best_move
 
     def minimax(self, game: 'Game', depth: int, maximizing_player: bool):
@@ -29,7 +30,7 @@ class KalahBot:
         best_move = None
         if maximizing_player:
             max_eval = float('-inf')
-            for i in range(1, len(game.board) // 2):  # Игрока 1
+            for i in range(len(game.board) // 2 + 1, len(game.board) - 1):  # Игрока 1
                 if game.board[i] > 0:
                     temp_game = self.simulate_move(game, i)
                     eval = self.minimax(temp_game, depth - 1, False)[1]
@@ -39,7 +40,7 @@ class KalahBot:
             return best_move, max_eval
         else:
             min_eval = float('inf')
-            for i in range(len(game.board) // 2 + 1, len(game.board) - 1):  # Игрока 2
+            for i in range(1, len(game.board) // 2):  # Игрока 2
                 if game.board[i] > 0:
                     temp_game = self.simulate_move(game, i)
                     eval = self.minimax(temp_game, depth - 1, True)[1]
