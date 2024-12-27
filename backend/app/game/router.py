@@ -85,7 +85,6 @@ async def notify_players(game_id: str, game: Game):
     for token in [game.token]:
         logging.info(f"Зашли в notify")
         for connect in active_connections[token]:
-            logging.info(active_connections)
             await connect.send_json(message)
         # if player in active_connections:
         #     logging.info(f"Активное соединение: {active_connections[player]}")
@@ -97,12 +96,16 @@ async def notify_players(game_id: str, game: Game):
 @router.websocket("/ws/{token}")
 async def websocket_endpoint(websocket: WebSocket, token: str):
     await websocket.accept()
-    logging.info(active_connections)
-
     if token in active_connections:
+        # active_player_connections[id]=websocket
+        # for player_conn in active_player_connections:
+        #     for conn in active_connections[token]:
+        if(len(active_connections[token])>20):
+            active_connections[token].pop(0)
         active_connections[token].append(websocket)
     else:
-        active_connections[token] = [websocket]
+        active_player_connections[id]=websocket
+        active_connections[token] = [active_player_connections[id]]
 
     logging.info(f"User {token} connected.")
 
