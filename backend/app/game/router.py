@@ -286,13 +286,14 @@ async def set_stats(id1: int, id2: int, session: AsyncSession = TransactionSessi
     result = result.scalar_one_or_none()
     result.wins += 1
     result.games_played += 1
-    session.add(result)
+    logging(f"res11{result}")
+    session.commit()
     query = select(UserStatistics).where(UserStatistics.user_id == id2)
     result = await session.execute(query)
     result = result.scalar_one_or_none()
     result.games_played += 1
-    session.add(result)
-    session.flush()
+    logging(f"res12{result}")
+    session.commit()
 
 
 async def set_draw(id1: int, id2: int, session: AsyncSession = TransactionSessionDep):
@@ -300,10 +301,11 @@ async def set_draw(id1: int, id2: int, session: AsyncSession = TransactionSessio
     result = await session.execute(query)
     result = result.scalar_one_or_none()
     result.games_played += 1
-    session.add(result)
+    logging(f"res21{result}")
+    session.commit()
     query = select(UserStatistics).where(UserStatistics.user_id == id2)
     result = await session.execute(query)
     result = result.scalar_one_or_none()
     result.games_played += 1
-    session.add(result)
-    session.flush()
+    logging(f"res22{result}")
+    session.commit()

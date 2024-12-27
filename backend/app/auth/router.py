@@ -73,10 +73,9 @@ async def get_all_users(session: AsyncSession = SessionDep,
 async def update_user(
     user_data: SUserUpdate,
     session: AsyncSession = TransactionSessionDep,
-    current_user: dict = Depends(get_current_user)
 ) -> dict:
     # Получаем текущего пользователя из базы данных
-    user = await UsersDAO.find_one_or_none(session=session, filters=EmailModel(email=current_user["email"]))
+    user = await UsersDAO.find_one_or_none(session=session, filters=EmailModel(email=user_data.email))
 
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
