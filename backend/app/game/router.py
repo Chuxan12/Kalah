@@ -11,6 +11,11 @@ from app.dao.session_maker import TransactionSessionDep, SessionDep
 from app.auth.models import UserStatistics
 from sqlalchemy.future import select
 from sqlalchemy import update
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from app.config import database_url
+from app.dao.database import engine
+from app.game.service import KalahBot
+
 
 router = APIRouter(prefix="/games", tags=["Games"])
 
@@ -24,6 +29,13 @@ active_player_connections: Dict[str, WebSocket] = {}
 
 # Хранилище для токенов и ID игр
 token_to_game_id: Dict[str, str] = {}
+
+db_session = async_sessionmaker(
+    bind=engine,
+    autoflush=False,
+    expire_on_commit=False,
+    class_=AsyncSession
+)
 
 # Создание новой игры
 
@@ -49,7 +61,7 @@ async def create_game(data: CreateGameGTO):
     # Создание новой настройки игры
     new_settings = Settings(stones_count=data.beans,
                             holes_count=data.holes, turn_time=data.time_per_move)
-    settings_store[str(id)] = new_settings
+    settings_store[str(data.id)] = new_settings
     if (data.holes > 14 or data.holes < 6):
         raise HTTPException(status_code=400, detail="Invalid holes")
     if (data.beans < 3 or data.beans > 10):
@@ -81,14 +93,14 @@ async def create_game(data: CreateGameGTO):
 
 async def notify_players(game_id: str, game: Game):
     logging.info(f"Э бля")
-    message = {"type": "game_update", "game": game.dict()}
-    for token in [game.token]:
-        logging.info(f"Зашли в notify")
-        for connect in active_connections[token]:
-            await connect.send_json(message)
-        # if player in active_connections:
-        #     logging.info(f"Активное соединение: {active_connections[player]}")
-        #     await active_connections[player].send_json(message)
+    # message = {"type": "game_update", "game": game.dict()}
+    # for token in [game.token]:
+    #     logging.info(f"Зашли в notify")
+    #     for connect in active_connections[token]:
+    #         await connect.send_json(message)
+    # if player in active_connections:
+    #     logging.info(f"Активное соединение: {active_connections[player]}")
+    #     await active_connections[player].send_json(message)
 
 # WebSocket для подключения игроков
 
@@ -100,11 +112,11 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         # active_player_connections[id]=websocket
         # for player_conn in active_player_connections:
         #     for conn in active_connections[token]:
-        if(len(active_connections[token])>20):
+        if (len(active_connections[token]) > 20):
             active_connections[token].pop(0)
         active_connections[token].append(websocket)
     else:
-        active_player_connections[id]=websocket
+        active_player_connections[id] = websocket
         active_connections[token] = [active_player_connections[id]]
 
     logging.info(f"User {token} connected.")
@@ -137,6 +149,7 @@ async def make_move(game_id: str, pit_index: int):
         logging.info(f"Игра11:{game}")
         raise HTTPException(status_code=400, detail="Invalid index")
     if game.current_turn == game.player2 and pit_index < len(game.board)//2:
+        logging.info(f"Игра12:{pit_index}")
         logging.info(f"Игра12:{game}")
         raise HTTPException(status_code=400, detail="Invalid index")
     if pit_index == len(game.board)//2 or pit_index == 0:
@@ -225,38 +238,40 @@ async def make_move(game_id: str, pit_index: int):
     for i in range(len(game.board)):
         total_stones += game.board[i]
     if (game.board[0] > total_stones/2):
-        set_stats(game.player2, game.player1)
+        await set_stats(game.player2, game.player1)
         game.winner = game.player2
         await notify_players(str(game_id), game)
         return game
     if (game.board[len(game.board)//2] > total_stones/2):
-        set_stats(game.player1, game.player2)
+        await set_stats(game.player1, game.player2)
         game.winner = game.player1
         await notify_players(str(game_id), game)
         return game
     flag1 = True
     for i in range(1, len(game.board)//2):
         if (temp[i] != 0):
+            logging.info(f"temp1{temp[i]}")
             flag1 = False
     if (flag1):
-        for i in range(1, len(game.board)//2):
-            temp[len(game.board)//2] += temp[i]
-    flag2 = True
-    for i in range(len(game.board)//2, len(game.board)-1):
-        if (temp[i] != 0):
-            flag2 = False
-    if (flag2):
         for i in range(len(game.board)//2, len(game.board)):
             temp[0] += temp[i]
+    flag2 = True
+    for i in range(len(game.board)//2 + 1, len(game.board)-1):
+        if (temp[i] != 0):
+            logging.info(f"temp2{temp[i]}")
+            flag2 = False
+    if (flag2):
+        for i in range(1, len(game.board)//2):
+            temp[len(game.board)//2] += temp[i]
     if (flag1 or flag2):
         if (game.board[0] > game.board[len(game.board)//2]):
-            set_stats(game.player2, game.player1)
+            await set_stats(game.player2, game.player1)
             game.winner = game.player2
         elif (game.board[0] < game.board[len(game.board)//2]):
-            set_stats(game.player1, game.player2)
+            await set_stats(game.player1, game.player2)
             game.winner = game.player1
         else:
-            set_draw(game.player1, game.player2)
+            await set_draw(game.player1, game.player2)
             game.winner = "draw"
 
     await notify_players(str(game_id), game)
@@ -280,32 +295,70 @@ async def get_settings():
     return settings_store
 
 
+@router.post("/play_bot/{game_id}/{difficulty}", response_model=Game)
+async def play_with_bot(game_id: str, difficulty: str):
+    game = games_store.get(game_id)
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+
+    bot = KalahBot(player_name=game.player2, difficulty=difficulty)
+
+    # Бот делает ход
+    move = bot.choose_move(game)
+    if move is not None:
+        if (move < len(game.board)//2) or (move >= len(game.board)-1):
+            for i in range(len(game.board)//2+1, len(game.board)-1):
+                if (game.board[i] != 0):
+                    move = i
+        res = await make_move(game_id, move)
+        logging.info(f"bot:{res}")
+        while (res.current_turn == "-1"):
+            move = bot.choose_move(game)
+            if (move < len(game.board)//2) or (move >= len(game.board)-1):
+                for i in range(len(game.board)//2+1, len(game.board)-1):
+                    if (game.board[i] != 0):
+                        move = i
+            logging.info(f"botMove:{move}")
+            res = await make_move(game_id, move)
+        return res
+    else:
+        return {"message": "No available moves for the bot."}
+
+
 async def set_stats(id1: int, id2: int, session: AsyncSession = TransactionSessionDep):
-    query = select(UserStatistics).where(UserStatistics.user_id == id1)
-    result = await session.execute(query)
-    result = result.scalar_one_or_none()
-    result.wins += 1
-    result.games_played += 1
-    logging(f"res11{result}")
-    session.commit()
-    query = select(UserStatistics).where(UserStatistics.user_id == id2)
-    result = await session.execute(query)
-    result = result.scalar_one_or_none()
-    result.games_played += 1
-    logging(f"res12{result}")
-    session.commit()
+    async with db_session() as session:
+        query = select(UserStatistics).where(UserStatistics.user_id == id1)
+        logging.info(f"res1{query}")
+        result = await session.execute(query)
+        result = result.scalars().first()
+        logging.info(f"res111{result}")
+        result.wins += 1
+        result.games_played += 1
+        logging.info(f"res11{result}")
+        await session.commit()
+        query = select(UserStatistics).where(UserStatistics.user_id == id2)
+        result = await session.execute(query)
+        result = result.scalars().first()
+        logging.info(f"res112{result}")
+        result.games_played += 1
+        logging.info(f"res12{result}")
+        await session.commit()
 
 
 async def set_draw(id1: int, id2: int, session: AsyncSession = TransactionSessionDep):
-    query = select(UserStatistics).where(UserStatistics.user_id == id1)
-    result = await session.execute(query)
-    result = result.scalar_one_or_none()
-    result.games_played += 1
-    logging(f"res21{result}")
-    session.commit()
-    query = select(UserStatistics).where(UserStatistics.user_id == id2)
-    result = await session.execute(query)
-    result = result.scalar_one_or_none()
-    result.games_played += 1
-    logging(f"res22{result}")
-    session.commit()
+    async with db_session() as session:
+        query = select(UserStatistics).where(UserStatistics.user_id == id1)
+        logging.info(f"res2{query}")
+        result = await session.execute(query)
+        result = result.scalars().first()
+        logging.info(f"res211{result}")
+        result.games_played += 1
+        logging.info(f"res21{result}")
+        await session.commit()
+        query = select(UserStatistics).where(UserStatistics.user_id == id2)
+        result = await session.execute(query)
+        result = result.scalars().first()
+        logging.info(f"res222{result}")
+        result.games_played += 1
+        logging.info(f"res22{result}")
+        await session.commit()

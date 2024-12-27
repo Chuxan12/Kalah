@@ -82,17 +82,21 @@ async def update_user(
                             detail='Пользователь не найден')
 
     # Проверяем совпадение старого пароля
-    if user_data.old_password is not None:
+    if user_data.old_password is not None and user_data.password is not None:
         if not verify_password(plain_password=user_data.old_password, hashed_password=user.password):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                 detail='Старый пароль не совпадает')
-
+    
+    if user_data.old_password is not None and user_data.password is None:
+        if not verify_password(plain_password=user_data.old_password, hashed_password=user.password):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail='Неверный пароль')
     # Обновляем поля пользователя в зависимости от переданных данных
     if user_data.first_name is not None:
         user.first_name = user_data.first_name
     if user_data.avatar is not None:
         user.avatar = user_data.avatar
-    if user_data.password:  # Если новый пароль передан, хешируем его
+    if user_data.password is not None:  # Если новый пароль передан, хешируем его
         user.password = get_password_hash(user_data.password)
 
     # Применяем изменения в базе данных
