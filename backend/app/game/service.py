@@ -9,11 +9,11 @@ class KalahBot:
         self.difficulty = self.set_difficulty(difficulty)
 
     def set_difficulty(self, difficulty: str) -> int:
-        if difficulty == "easy":
+        if difficulty == "1":
             return 1
-        elif difficulty == "medium":
+        elif difficulty == "2":
             return 3
-        elif difficulty == "hard":
+        elif difficulty == "3":
             return 5
         else:
             raise ValueError("Invalid difficulty level")
@@ -69,11 +69,15 @@ class KalahBot:
         )
 
         num_pits = len(temp_game.board)
-        logging.info(f"Игра1:{temp_game}")
+        logging.info(f"ИграBot1:{temp_game}")
         temp = []
         for i in range(0, len(temp_game.board)):
             temp.append(temp_game.board[i])
-        logging.info(f"Игра11:{temp}")
+        logging.info(f"ИграBot11:{temp}")
+        if (pit_index < len(temp_game.board)//2) or (pit_index >= len(temp_game.board)-1):
+            for i in range(len(temp_game.board)//2+1, len(temp_game.board)-1):
+                if (temp_game.board[i] != 0):
+                    pit_index = i
         stones = temp[pit_index]
         temp[pit_index] = 0  # Убираем камни из выбранной лунки
         index = pit_index
@@ -162,7 +166,7 @@ class KalahBot:
             if (temp[i] != 0):
                 flag2 = False
         if (flag2):
-            for i in range(len(temp_game.board)//2, len(temp_game.board)):
+            for i in range(len(temp_game.board)//2 + 1, len(temp_game.board)):
                 temp[0] += temp[i]
         if (flag1 or flag2):
             if (temp_game.board[0] > temp_game.board[len(temp_game.board)//2]):
