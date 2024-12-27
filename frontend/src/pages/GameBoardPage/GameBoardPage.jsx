@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import Kalah from "../../components/Kalah/Kalah";
 import Hole from "../../components/GameHole/GameHole";
 import styles from "./GameBoardPage.module.css";
@@ -14,13 +15,15 @@ const GameBoard = () => {
     idTurn: null,
   });
 
+  const navigate = useNavigate();
   const [token, setToken] = useState("");
   const location = useLocation();
   const [showFinishButton, setShowFinishButton] = useState(false);
   const [webSocket, setWebSocket] = useState(null);
   const [isFirstPlayer, setIsFirstPlayer] = useState(false);
-  const [winnerId, setWinnerId] = useState(null);
+  const [winnerName, setWinnerName] = useState(null);
   const [canDoTurn, setCanDoTurn] = useState(null);
+  const [gameStarted, setGameStarted] = useState(false);
   const [firstPlayerInfo, setFirstPlayerInfo] = useState({
     first_name: null,
     id: null,
@@ -77,7 +80,17 @@ const GameBoard = () => {
             if (data.type === "game_update") {
               const { board, player1, player2, current_turn, winner } =
                 data.game;
-
+              if (winner != null) {
+                if (winner != "draw") {
+                  const win = await axios.get(
+                    `/api/auth/get_user_by_id/?id=${Number(winner)}`
+                  );
+                  setWinnerName(win.data.first_name);
+                } else {
+                  const win = "НИЧЬЯ!";
+                  setWinnerName(win);
+                }
+              }
               if (
                 player2 != "-1" &&
                 (await authResponse.data.id.toString()) === player1
@@ -91,6 +104,7 @@ const GameBoard = () => {
                   id: opponentResponse.data.id,
                   avatar: opponentResponse.data.avatar,
                 });
+                setGameStarted(true);
               } else if (player2 != "-1") {
                 const opponentResponse = await axios.get(
                   `/api/auth/get_user_by_id/?id=${player1}`
@@ -101,13 +115,12 @@ const GameBoard = () => {
                   id: opponentResponse.data.id,
                   avatar: opponentResponse.data.avatar,
                 });
-              }
-
-              if (winner != null) {
-                setWinnerId(data.winner);
+                setGameStarted(true);
               }
               setCanDoTurn(
-                await (current_turn === (await authResponse.data.id.toString()))
+                await (current_turn ===
+                  (await authResponse.data.id.toString()) &&
+                  (await player2) != "-1")
               );
 
               const isFirst = await (player1 ===
@@ -163,19 +176,22 @@ const GameBoard = () => {
   }, [location]);
 
   const handleHoleClick = (index) => {
-    const selectedSeeds = boardState.lowerRow[index];
-    if (selectedSeeds === 0) return;
+    if (canDoTurn) {
+      const selectedSeeds = boardState.lowerRow[index];
+      if (selectedSeeds === 0) return;
 
-    setBoardState((prevState) => ({
-      ...prevState,
-      selectedHole: index,
-    }));
+      setBoardState((prevState) => ({
+        ...prevState,
+        selectedHole: index,
+      }));
 
-    setShowFinishButton(true);
+      setShowFinishButton(true);
+    }
   };
 
   const handleFinishTurn = async () => {
     try {
+      setShowFinishButton(false);
       const tok = localStorage.getItem("id");
 
       const selectedHoleIndex = isFirstPlayer
@@ -195,7 +211,8 @@ const GameBoard = () => {
   };
 
   const handleCloseModal = () => {
-    setWinnerId(null);
+    setWinnerName(null);
+    navigate("/");
   };
 
   const handleCopyToken = () => {
@@ -206,16 +223,27 @@ const GameBoard = () => {
   return (
     <div>
       <div className={styles.currentTurnContainer}>
-        <p>
-          Сейчас ход игрока:{" "}
-          {canDoTurn ? firstPlayerInfo.first_name : secondPlayerInfo.first_name}
-        </p>
+        {gameStarted && (
+          <p>
+            Сейчас ход игрока:{" "}
+            {canDoTurn
+              ? firstPlayerInfo.first_name
+              : secondPlayerInfo.first_name}
+          </p>
+        )}
+        {!gameStarted && <p>Ожидаем второго игрока...</p>}
       </div>
       <div className={styles.playerContainerLeft}>
         Ваше имя: {firstPlayerInfo.first_name}
+        <div className={styles.avatarContainer}>
+          <img src={firstPlayerInfo.avatar} className={styles.profileAvatar} />
+        </div>
       </div>
       <div className={styles.playerContainerRight}>
         Ваш противник: {secondPlayerInfo.first_name}
+        <div className={styles.avatarContainer}>
+          <img src={secondPlayerInfo.avatar} className={styles.profileAvatar} />
+        </div>
       </div>
       <div className={styles.board}>
         <Kalah seedsCount={boardState.kalahs.left} />
@@ -249,11 +277,11 @@ const GameBoard = () => {
             Завершить ход
           </button>
         )}
-        {winnerId !== null && (
+        {winnerName !== null && (
           <div className={styles.modal}>
             <div className={styles.modalContent}>
               <h2>Победитель</h2>
-              <p>ID Победителя: {winnerId}</p>
+              <p>В этой партии победил {winnerName}</p>
               <button onClick={handleCloseModal}>Закрыть</button>
             </div>
           </div>
