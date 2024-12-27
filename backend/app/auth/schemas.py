@@ -56,6 +56,7 @@ class UserGetDTO(UserBase):
 
 class SUserUpdate(BaseModel):
     first_name: Optional[str] = Field(None, max_length=50, description="Имя пользователя. Оставьте пустым, если не хотите менять.")
+    email: EmailStr = Field(description="Электронная почта")
     avatar: Optional[str] = Field(None, description="URL или путь к изображению аватара. Оставьте пустым, если не хотите менять.")
     old_password: Optional[str] = Field(None, min_length=5, max_length=50, description="Пароль, от 5 до 50 знаков. Оставьте пустым, если не хотите менять.")
     password: Optional[str] = Field(None, min_length=5, max_length=50, description="Пароль, от 5 до 50 знаков. Оставьте пустым, если не хотите менять.")
