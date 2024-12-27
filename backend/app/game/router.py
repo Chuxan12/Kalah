@@ -331,6 +331,10 @@ async def set_stats(id1: int, id2: int, session: AsyncSession = TransactionSessi
         logging.info(f"res1{query}")
         result = await session.execute(query)
         result = result.scalars().first()
+        if result is None:
+            # Обработка случая, когда пользователь не найден
+            logging.error(f"User with ID {id1} not found. Cannot update stats.")
+            return
         logging.info(f"res111{result}")
         result.wins += 1
         result.games_played += 1
@@ -339,6 +343,10 @@ async def set_stats(id1: int, id2: int, session: AsyncSession = TransactionSessi
         query = select(UserStatistics).where(UserStatistics.user_id == id2)
         result = await session.execute(query)
         result = result.scalars().first()
+        if result is None:
+            # Обработка случая, когда пользователь не найден
+            logging.error(f"User with ID {id2} not found. Cannot update stats.")
+            return
         logging.info(f"res112{result}")
         result.games_played += 1
         logging.info(f"res12{result}")
@@ -351,6 +359,10 @@ async def set_draw(id1: int, id2: int, session: AsyncSession = TransactionSessio
         logging.info(f"res2{query}")
         result = await session.execute(query)
         result = result.scalars().first()
+        if result is None:
+            # Обработка случая, когда пользователь не найден
+            logging.error(f"User with ID {id1} not found. Cannot update stats.")
+            return
         logging.info(f"res211{result}")
         result.games_played += 1
         logging.info(f"res21{result}")
@@ -358,6 +370,10 @@ async def set_draw(id1: int, id2: int, session: AsyncSession = TransactionSessio
         query = select(UserStatistics).where(UserStatistics.user_id == id2)
         result = await session.execute(query)
         result = result.scalars().first()
+        if result is None:
+            # Обработка случая, когда пользователь не найден
+            logging.error(f"User with ID {id2} not found. Cannot update stats.")
+            return
         logging.info(f"res222{result}")
         result.games_played += 1
         logging.info(f"res22{result}")
