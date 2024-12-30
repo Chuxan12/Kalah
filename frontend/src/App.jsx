@@ -13,6 +13,7 @@ import AboutGamePage from "./pages/AboutGamePage/AboutGamePage";
 import GameBoardPage from "./pages/GameBoardPage/GameBoardPage";
 import axios from "axios";
 import AboutSystemPage from "./pages/AboutSystemPage/AboutSystemPage";
+import GameBoardWithBot from "./pages/GameBoardWithBotPage/GameBoardWithBotPage";
 
 const App = () => {
   const [currentTheme, setCurrentTheme] = useState("desert");
@@ -29,6 +30,7 @@ const App = () => {
           <Route path="about-game" element={<AboutGamePage />} />
           <Route path="game-board" element={<GameBoardPage />} />
           <Route path="about-system" element={<AboutSystemPage />} />
+          <Route path="game-board-offline" element={<GameBoardWithBot />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

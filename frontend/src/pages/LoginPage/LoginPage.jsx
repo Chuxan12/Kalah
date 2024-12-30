@@ -18,10 +18,9 @@ const LoginPage = () => {
     const checkAuth = async () => {
       try {
         const response = await axios.get("api/auth/me/", {
-          withCredentials: true, 
+          withCredentials: true,
         });
-          navigate("/profile"); // Перенаправляем на профиль, если пользователь авторизован
-        
+        navigate("/profile"); // Перенаправляем на профиль, если пользователь авторизован
       } catch (error) {
         console.log("Пользователь не авторизован", error);
       }
@@ -46,13 +45,10 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(
-        "api/auth/login/",
-        formData,
-        {
-          withCredentials: true, // Для отправки и получения cookies
-        }
-      );
+      console.log(formData);
+      const response = await axios.post("api/auth/login/", formData, {
+        withCredentials: true, // Для отправки и получения cookies
+      });
 
       if (response.status === 200) {
         navigate("/profile"); // Перенаправляем на профиль после успешной авторизации
@@ -90,12 +86,12 @@ const LoginPage = () => {
               required
             />
           </div>
-          <button
-            type="submit"
-            className={styles.submitButton}>
+          <button type="submit" className={styles.submitButton}>
             Войти
           </button>
-          {errorMessage && <p className={styles.errorMessage}>{errorMessage}</p>}
+          {errorMessage && (
+            <p className={styles.errorMessage}>{errorMessage}</p>
+          )}
           <p className={styles.registrationText}>
             Первый раз здесь?{" "}
             <a href="/registration" className={styles.loginLink}>

@@ -12,8 +12,8 @@ const ProfilePage = () => {
     wins: null,
   });
   const [userInput, setUserInput] = useState({
-    old_password: "",
-    password: "",
+    old_password: null,
+    password: null,
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -82,19 +82,14 @@ const ProfilePage = () => {
   const handleClickOnConfirmButton = async () => {
     try {
       const dataToSend = {
+        email: userData.email,
         first_name: userData.first_name,
         avatar: userData.avatar,
         old_password: userInput.old_password,
         password: userInput.password,
       };
-
-      const response = await axios.put(
-        "api/auth/update/",
-        {
-          withCredentials: true,
-        },
-        dataToSend
-      );
+      console.log(dataToSend);
+      const response = await axios.put("api/auth/update/", dataToSend);
 
       alert("Изменения успешно сохранены!");
     } catch (error) {
@@ -102,7 +97,7 @@ const ProfilePage = () => {
         "Ошибка при сохранении данных:",
         error.response?.data?.message || error.message
       );
-      alert("Не удалось сохранить изменения. Попробуйте позже.");
+      alert("Для сохранения изменений введите верный старый пароль!");
     }
   };
 

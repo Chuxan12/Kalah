@@ -54,7 +54,148 @@ async def set_players(data: SetPlayersDTO):
         await notify_players(str(temp.id), temp)
     await notify_players(str(temp.id), temp)
     return GameResponse(game=temp, tokens={"player1": str(temp.player1), "player2": str(temp.player2)})
+# single
+@router.post("/set_players_bot", response_model=GameResponse)
+async def set_players(data: SetPlayersDTO):
+    temp = games_store[data.game_id]
+    if temp.player1 == "-1" or temp.player1 == str(data.id1):
+        temp.player1 = str(data.id1)
+        temp.current_turn = str(data.id1)
+        logging.info(f"Первый: {temp}")
+    else:
+        temp.player2 = str(data.id1)
+        logging.info(f"Второй: {temp}")
+    return GameResponse(game=temp, tokens={"player1": str(temp.player1), "player2": str(temp.player2)})
+#single
+# Выполнение хода
+@router.post("/move_bot/{game_id}/{pit_index}", response_model=Game)
+async def make_move_bot(game_id: str, pit_index: int):
+    game = games_store.get(game_id)
+    if not game:
+        raise HTTPException(status_code=404, detail="Game not found")
+    if game.current_turn not in [game.player1, game.player2]:
+        raise HTTPException(status_code=400, detail="Invalid player")
+    if game.current_turn == game.player1 and pit_index >= len(game.board)//2:
+        logging.info(f"Игра11:{game}")
+        raise HTTPException(status_code=400, detail="Invalid index")
+    if game.current_turn == game.player2 and pit_index < len(game.board)//2:
+        logging.info(f"Игра12:{pit_index}")
+        logging.info(f"Игра12:{game}")
+        raise HTTPException(status_code=400, detail="Invalid index")
+    if pit_index == len(game.board)//2 or pit_index == 0:
+        logging.info(f"Игра13:{game}")
+        raise HTTPException(status_code=400, detail="Invalid index")
+    # Проверка на допустимость хода
+    # Количество лунок (первый и последний элементы - калахи)
+    num_pits = len(game.board)
+    if pit_index < 1 or pit_index > num_pits or game.board[pit_index] == 0:
+        raise HTTPException(status_code=400, detail="Invalid move")
 
+    logging.info(f"Игра1:{game}")
+    temp = []
+    for i in range(0, len(game.board)):
+        temp.append(game.board[i])
+    logging.info(f"Игра111:{temp}")
+    stones = temp[pit_index]
+    temp[pit_index] = 0  # Убираем камни из выбранной лунки
+    index = pit_index
+    # Распределение камней
+    if (game.current_turn == game.player1):
+        while stones > 0:
+            index += 1
+            if index == 0:  # Пропускаем калах второго игрока
+                index += 1
+            if index >= len(game.board):  # Зацикливаем на начало
+                index = 1
+            if (stones == 1):
+                if (index != 0):
+                    if (index < len(game.board)//2):
+                        if (temp[index] == 0):
+                            temp[len(game.board) //
+                                 2] += temp[len(game.board) - index] + 1
+                            temp[len(game.board) - index] = 0
+                            stones -= 1
+                        else:
+                            temp[index] += 1
+                            stones -= 1
+                    else:
+                        temp[index] += 1
+                        stones -= 1
+                else:
+                    temp[index] += 1
+                    stones -= 1
+            else:
+                temp[index] += 1
+                stones -= 1
+    if (game.current_turn == game.player2):
+        while stones > 0:
+            index += 1
+            if index == len(game.board)//2:  # Пропускаем калах первого игрока
+                index += 1
+            if index >= len(game.board):  # Зацикливаем на начало
+                index = 0
+            if (stones == 1):
+                if (index != len(game.board) - 1):
+                    if (index >= len(game.board)//2):
+                        if (temp[index] == 0):
+                            temp[0] += temp[len(game.board) - index + 1] + 1
+                            temp[len(game.board) - index] = 0
+                            stones -= 1
+                        else:
+                            temp[index] += 1
+                            stones -= 1
+                    else:
+                        temp[index] += 1
+                        stones -= 1
+                else:
+                    temp[index] += 1
+                    stones -= 1
+            else:
+                temp[index] += 1
+                stones -= 1
+
+    for i in range(0, len(game.board)):
+        game.board[i] = temp[i]
+    if (game.current_turn == game.player1) and (index == len(game.board)//2):
+        game.current_turn = game.player1
+    elif (game.current_turn == game.player2) and (index == 0):
+        game.current_turn = game.player2
+    else:
+        game.current_turn = game.player2 if game.current_turn == game.player1 else game.player1
+
+    total_stones = 0
+    for i in range(len(game.board)):
+        total_stones += game.board[i]
+    if (game.board[0] > total_stones/2):
+        game.winner = game.player2
+        return game
+    if (game.board[len(game.board)//2] > total_stones/2):
+        game.winner = game.player1
+        return game
+    flag1 = True
+    for i in range(1, len(game.board)//2):
+        if (temp[i] != 0):
+            logging.info(f"temp1{temp[i]}")
+            flag1 = False
+    if (flag1):
+        for i in range(len(game.board)//2, len(game.board)):
+            temp[0] += temp[i]
+    flag2 = True
+    for i in range(len(game.board)//2 + 1, len(game.board)-1):
+        if (temp[i] != 0):
+            logging.info(f"temp2{temp[i]}")
+            flag2 = False
+    if (flag2):
+        for i in range(1, len(game.board)//2):
+            temp[len(game.board)//2] += temp[i]
+    if (flag1 or flag2):
+        if (game.board[0] > game.board[len(game.board)//2]):
+            game.winner = game.player2
+        elif (game.board[0] < game.board[len(game.board)//2]):
+            game.winner = game.player1
+        else:
+            game.winner = "draw"
+    return game
 
 @router.post("/", response_model=GameResponse)
 async def create_game(data: CreateGameGTO):
@@ -93,11 +234,11 @@ async def create_game(data: CreateGameGTO):
 
 async def notify_players(game_id: str, game: Game):
     logging.info(f"Э бля")
-    # message = {"type": "game_update", "game": game.dict()}
-    # for token in [game.token]:
-    #     logging.info(f"Зашли в notify")
-    #     for connect in active_connections[token]:
-    #         await connect.send_json(message)
+    message = {"type": "game_update", "game": game.dict()}
+    for token in [game.token]:
+        logging.info(f"Зашли в notify")
+        for connect in active_connections[token]:
+            await connect.send_json(message)
     # if player in active_connections:
     #     logging.info(f"Активное соединение: {active_connections[player]}")
     #     await active_connections[player].send_json(message)
@@ -109,9 +250,9 @@ async def notify_players(game_id: str, game: Game):
 async def websocket_endpoint(websocket: WebSocket, token: str):
     await websocket.accept()
     if token in active_connections:
-        # active_player_connections[id]=websocket
-        # for player_conn in active_player_connections:
-        #     for conn in active_connections[token]:
+        # # active_player_connections[id]=websocket
+        # # for player_conn in active_player_connections:
+        # #     for conn in active_connections[token]:
         if (len(active_connections[token]) > 20):
             active_connections[token].pop(0)
         active_connections[token].append(websocket)
@@ -146,7 +287,7 @@ async def make_move(game_id: str, pit_index: int):
     if game.current_turn not in [game.player1, game.player2]:
         raise HTTPException(status_code=400, detail="Invalid player")
     if game.current_turn == game.player1 and pit_index >= len(game.board)//2:
-        logging.info(f"Игра11:{game}")
+        #logging.info(f"Игра11:{game}")
         raise HTTPException(status_code=400, detail="Invalid index")
     if game.current_turn == game.player2 and pit_index < len(game.board)//2:
         logging.info(f"Игра12:{pit_index}")
@@ -166,7 +307,7 @@ async def make_move(game_id: str, pit_index: int):
     temp = []
     for i in range(0, len(game.board)):
         temp.append(game.board[i])
-    logging.info(f"Игра11:{temp}")
+    #logging.info(f"Игра11:{temp}")
     stones = temp[pit_index]
     temp[pit_index] = 0  # Убираем камни из выбранной лунки
     index = pit_index
@@ -310,7 +451,7 @@ async def play_with_bot(game_id: str, difficulty: str):
             for i in range(len(game.board)//2+1, len(game.board)-1):
                 if (game.board[i] != 0):
                     move = i
-        res = await make_move(game_id, move)
+        res = await make_move_bot(game_id, move)
         logging.info(f"bot:{res}")
         while (res.current_turn == "-1"):
             move = bot.choose_move(game)
@@ -319,7 +460,7 @@ async def play_with_bot(game_id: str, difficulty: str):
                     if (game.board[i] != 0):
                         move = i
             logging.info(f"botMove:{move}")
-            res = await make_move(game_id, move)
+            res = await make_move_bot(game_id, move)
         return res
     else:
         return {"message": "No available moves for the bot."}
