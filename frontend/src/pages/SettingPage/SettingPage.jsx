@@ -14,7 +14,7 @@ const SettingPage = () => {
     beans: 3,
     holes: 6,
     time_per_move: 5,
-    ai_difficulty: 0,
+    ai_difficulty: isOnline ? 0 : 1,
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [gameToken, setGameToken] = useState("");
@@ -52,7 +52,12 @@ const SettingPage = () => {
       localStorage.setItem("id", id);
       const gameData = { id, ...sliderValues, token }; // Добавляем id к sliderValues
       const response = await axios.post("api/games/", gameData);
-      navigate("/game-board");
+      if (gameData.ai_difficulty > 0) {
+        localStorage.setItem("bot", gameData.ai_difficulty);
+        navigate("/game-board-offline");
+      } else {
+        navigate("/game-board");
+      }
     } catch (error) {
       alert("Создание игры невозможно!");
     }
