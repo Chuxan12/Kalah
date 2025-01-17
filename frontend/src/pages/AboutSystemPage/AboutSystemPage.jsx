@@ -142,7 +142,7 @@ const AboutSystemPage = () => {
           </p>
           <figure>
             <img src="/info/index.png" alt="Начальная страница системы" />
-            <figcaption>Рисунок A.1 – Начальная страница системы</figcaption>
+            <figcaption>Начальная страница системы</figcaption>
           </figure>
 
           <h4 id="authentication">Вход в систему (авторизация)</h4>
@@ -155,7 +155,7 @@ const AboutSystemPage = () => {
           </p>
           <figure>
             <img src="/info/auth.png" alt="Страница авторизации" />
-            <figcaption>Рисунок А.2 – Страница авторизации</figcaption>
+            <figcaption>Страница авторизации</figcaption>
           </figure>
 
           <h4 id="user-mode">Работа с системой в режиме пользователя</h4>
@@ -167,7 +167,7 @@ const AboutSystemPage = () => {
           </p>
           <figure>
             <img src="/info/profile.png" alt="Страница профиля пользователя" />
-            <figcaption>Рисунок А.3 – Страница профиля</figcaption>
+            <figcaption>Страница профиля</figcaption>
           </figure>
 
           <p>
@@ -177,11 +177,11 @@ const AboutSystemPage = () => {
           </p>
           <figure>
             <img src="/info/aboutdev.png" alt="Страница о разработчиках" />
-            <figcaption>Рисунок А.4 – Страница «О разработчиках»</figcaption>
+            <figcaption>Страница «О разработчиках»</figcaption>
           </figure>
           <figure>
             <img src="/info/aboutgame.png" alt="Страницы об игре" />
-            <figcaption>Рисунок А.5 – Страницы «Об игре»</figcaption>
+            <figcaption>Страницы «Об игре»</figcaption>
           </figure>
 
           <h4 id="game-modes">Игровые режимы</h4>
@@ -198,7 +198,7 @@ const AboutSystemPage = () => {
               alt="Страница настроек для онлайн игры"
             />
             <figcaption>
-              Рисунок А.6 – Страница настроек игрового поля онлайн
+              Страница настроек игрового поля онлайн
             </figcaption>
           </figure>
           <figure>
@@ -207,7 +207,7 @@ const AboutSystemPage = () => {
               alt="Страница настроек против бота"
             />
             <figcaption>
-              Рисунок А.7 – Страница настроек игрового поля против бота
+              Страница настроек игрового поля против бота
             </figcaption>
           </figure>
 
@@ -226,25 +226,25 @@ const AboutSystemPage = () => {
           <figure>
             <img src="/info/start.png" alt="Начало игры" />
             <figcaption>
-              Рисунок А.8 – Страница начала игры до совершения ходов
+              Страница начала игры до совершения ходов
             </figcaption>
           </figure>
           <figure>
             <img src="/info/turnover.png" alt="Выбор лунки" />
             <figcaption>
-              Рисунок А.9 – Страница игры после выбора лунки
+              Страница игры после выбора лунки
             </figcaption>
           </figure>
           <figure>
             <img src="/info/game.png" alt="Завершение хода" />
             <figcaption>
-              Рисунок А.10 – Страница игры после завершения хода
+              Страница игры после завершения хода
             </figcaption>
           </figure>
           <figure>
             <img src="/info/winner.png" alt="Конец игры" />
             <figcaption>
-              Рисунок А.11 – Страница игры в случае победы одного из игроков
+              Страница игры в случае победы одного из игроков
             </figcaption>
           </figure>
         </section>
