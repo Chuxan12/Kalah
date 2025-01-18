@@ -113,12 +113,6 @@ const GameBoardPageWithBot = () => {
         );
 
         const { board, current_turn, winner } = moveResponse.data;
-
-        if (winner != null) {
-          setWinnerName(winner === "draw" ? "НИЧЬЯ!" : "БОТ");
-          break; // Завершаем игру
-        }
-
         const rowLength = (board.length - 2) / 2;
         const lowerRow = isFirstPlayer
           ? board.slice(1, rowLength + 1)
@@ -138,8 +132,22 @@ const GameBoardPageWithBot = () => {
           idTurn: current_turn,
         });
 
+        if (winner != null) {
+          if(winner === "draw"){
+            setWinnerName("НИЧЬЯ!");
+          }
+          else if(winner === "-1"){
+            setWinnerName("БОТ");
+          }
+          else{
+            setWinnerName("ВЫ ПОБЕДИЛИ!");
+          }
+          //
+          break; // Завершаем игру
+        }
+
         // Проверяем, если ход ещё у игрока, иначе передаём ход боту
-        isPlayerTurn = current_turn === firstPlayerInfo.id;
+        isPlayerTurn = await (current_turn === firstPlayerInfo.id);
 
         if (!isPlayerTurn) {
           console.log("Turn passed to bot");
@@ -150,34 +158,40 @@ const GameBoardPageWithBot = () => {
             `/api/games/play_bot/${token}/${bot}/`
           );
 
-          const {
-            board: botBoard,
-            current_turn: botCurrentTurn,
-            winner: botWinner,
-          } = botResponse.data;
-
-          if (botWinner != null) {
-            setWinnerName(botWinner === "draw" ? "НИЧЬЯ!" : "БОТ");
-            break; // Завершаем игру
-          }
+          const { board, current_turn, winner } = botResponse.data;
 
           const botLowerRow = isFirstPlayer
-            ? botBoard.slice(1, rowLength + 1)
-            : botBoard.slice(rowLength + 2, rowLength * 2 + 2);
+            ? board.slice(1, rowLength + 1)
+            : board.slice(rowLength + 2, rowLength * 2 + 2);
           const botUpperRow = isFirstPlayer
-            ? botBoard.slice(rowLength + 2, rowLength * 2 + 2).reverse()
-            : botBoard.slice(1, rowLength + 1).reverse();
+            ? board.slice(rowLength + 2, rowLength * 2 + 2).reverse()
+            : board.slice(1, rowLength + 1).reverse();
           const botKalahs = isFirstPlayer
-            ? { left: botBoard[0], right: botBoard[rowLength + 1] }
-            : { left: botBoard[rowLength + 1], right: botBoard[0] };
+            ? { left: board[0], right: board[rowLength + 1] }
+            : { left: board[rowLength + 1], right: board[0] };
 
           setBoardState({
             upperRow: botUpperRow,
             lowerRow: botLowerRow,
             kalahs: botKalahs,
             selectedHole: null,
-            idTurn: botCurrentTurn,
+            idTurn: current_turn,
           });
+
+          if (winner != null) {
+            if(winner === "draw"){
+              setWinnerName("НИЧЬЯ!");
+            }
+            else if(winner === "-1"){
+              setWinnerName("БОТ");
+            }
+            else{
+              setWinnerName("ВЫ ПОБЕДИЛИ!");
+            }
+            //
+            break; // Завершаем игру
+          }
+
         } else {
           setCanDoTurn(true); // Игрок продолжает ходить
         }
